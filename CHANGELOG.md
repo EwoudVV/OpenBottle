@@ -175,6 +175,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stale between releases and the unattended install aborted with exit 1,
   leaving the panel on "Not Installed" with no hint why. The vcrun verbs now
   run with --force; every other verb keeps checksum enforcement (#233).
+- A Visual C++ Runtime whose installer hung under wine after installing
+  successfully is now detected. The winetricks.log entry is only written once
+  the installer exits, so the Dependencies panel kept saying "Not Installed"
+  although the runtime was in place. When the log lacks the vcruntime verb,
+  the presence of mfc140.dll in system32 -- the x64 redist's payload on the
+  default win64 bottles, which Wine does not ship as a builtin -- now counts
+  as installed, reported with heuristic confidence; a bottle whose log
+  already says installed is never probed (#233).
 - A bottle opened on a runtime from the other Wine lineage no longer starts
   with an empty profile. Every Wine build names the profile after your Unix
   user, but CrossOver-lineage builds (the GPTK-capable v4 engines) hardcode
