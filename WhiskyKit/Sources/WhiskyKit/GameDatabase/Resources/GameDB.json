@@ -3754,6 +3754,116 @@
       }
     },
     {
+      "id": "screw-drivers",
+      "title": "Screw Drivers",
+      "aliases": [],
+      "subtitle": "Creactstudios / Headup",
+      "store": "steam",
+      "steamAppId": 1279510,
+      "rating": "playable",
+      "exeNames": [
+        "Screw Drivers.exe"
+      ],
+      "pathPatterns": [
+        "screw drivers"
+      ],
+      "antiCheat": null,
+      "constraints": {
+        "cpuArchitectures": [
+          "arm64"
+        ],
+        "minMacOSVersion": "15.0.0",
+        "minWineVersion": "11.0"
+      },
+      "variants": [
+        {
+          "id": "dxvk-balanced-60",
+          "label": "DXVK balanced (60 FPS)",
+          "isDefault": true,
+          "whenToUse": "Measured default for stable play on the tested M1 Max",
+          "rationale": [
+            "The game uses Direct3D 11 and reaches its menu reliably through DXVK",
+            "DXVK used less CPU than capped DXMT in a controlled 60-second menu sample",
+            "A 60 FPS limit prevents unnecessary work while the driving test is still pending"
+          ],
+          "settings": {
+            "graphicsBackend": "dxvk",
+            "dxvk": true,
+            "dxvkAsync": true,
+            "enhancedSync": "msync",
+            "forceD3D11": false,
+            "performancePreset": "balanced",
+            "shaderCacheEnabled": true,
+            "avxEnabled": false,
+            "sequoiaCompatMode": false
+          },
+          "environmentVariables": {
+            "DXVK_FRAME_RATE": "60"
+          },
+          "dllOverrides": [],
+          "winetricksVerbs": [],
+          "testedWith": {
+            "lastTestedAt": "2026-09-05T00:00:00Z",
+            "macOSVersion": "26.5.2",
+            "wineVersion": "11.0",
+            "whiskyVersion": "3.6.1",
+            "cpuArchitecture": "arm64"
+          }
+        },
+        {
+          "id": "dxmt-metalfx-2x-experimental",
+          "label": "DXMT + MetalFX 2x (experimental)",
+          "isDefault": false,
+          "whenToUse": "Try when a 1728x1117 render looks soft on a 3456x2234 display",
+          "rationale": [
+            "DXMT can reconstruct the low-resolution Direct3D 11 swapchain with MetalFX",
+            "A 2x scale maps 1728x1117 to the tested MacBook panel's native pixel grid",
+            "The 60 FPS cap reduced DXMT menu CPU use from 320.44% to 157.72%"
+          ],
+          "settings": {
+            "graphicsBackend": "dxmt",
+            "dxvk": false,
+            "dxvkAsync": false,
+            "enhancedSync": "msync",
+            "forceD3D11": false,
+            "performancePreset": "balanced",
+            "shaderCacheEnabled": true,
+            "avxEnabled": false,
+            "sequoiaCompatMode": false
+          },
+          "environmentVariables": {
+            "DXMT_CONFIG": "d3d11.preferredMaxFrameRate=60;d3d11.metalSpatialUpscaleFactor=2.0",
+            "DXMT_METALFX_SPATIAL_SWAPCHAIN": "1"
+          },
+          "dllOverrides": [],
+          "winetricksVerbs": []
+        }
+      ],
+      "notes": [
+        "The sharp mode assumes a 1728x1117 game render on a 3456x2234 display",
+        "DXMT + MetalFX still needs visual verification during actual driving",
+        "Vehicle calculation and map loading need a separate CPU profile"
+      ],
+      "knownIssues": [
+        {
+          "description": "Full 3456x2234 rendering is too slow on the tested M1 Max",
+          "severity": "major",
+          "workaround": "Use 1728x1117; try the experimental 2x MetalFX profile for sharper output"
+        },
+        {
+          "description": "Vehicle calculation and map loading are slower than expected",
+          "severity": "major",
+          "workaround": "No verified runtime fix yet; these operations need a focused CPU profile"
+        }
+      ],
+      "provenance": {
+        "source": "local-benchmark",
+        "author": "EwoudVV",
+        "lastUpdated": "2026-09-05T00:00:00Z",
+        "referenceURL": "https://github.com/EwoudVV/OpenBottle/blob/main/docs/benchmarks/screw-drivers-2026-09-05.md"
+      }
+    },
+    {
       "id": "sekiro",
       "title": "Sekiro: Shadows Die Twice",
       "aliases": [
