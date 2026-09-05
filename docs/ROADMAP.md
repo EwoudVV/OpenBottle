@@ -19,6 +19,7 @@ evidence to explain which layer made the difference.
 - [x] verify Wine 11, Direct3D 11, DXVK 1.10.3, and DXMT 0.80
 - [x] compare DXVK and DXMT at 1728x1117
 - [x] compare both backends with a 60 FPS limit
+- [x] create a reversible DXMT + MetalFX launcher with hash-checked restoration
 - [ ] visually test DXMT with 2x MetalFX spatial reconstruction
 - [ ] record FPS and frame-time evidence during the same driving route
 - [ ] profile one vehicle calculation with `sample`
