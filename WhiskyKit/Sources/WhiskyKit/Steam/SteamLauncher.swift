@@ -70,7 +70,8 @@ public enum SteamLauncher {
             .first { $0.appId == appId }?.installURL
         let plan = LaunchResolver.plan(
             steamAppId: appId,
-            userOverrides: installURL.flatMap { userOverrides(forInstallURL: $0, bottle: bottle) }
+            userOverrides: installURL.flatMap { userOverrides(forInstallURL: $0, bottle: bottle) },
+            appliedConfiguration: GameConfigSnapshot.load(from: bottle.url)
         )
         let steamExe = steamRoot.appending(path: "steam.exe")
 

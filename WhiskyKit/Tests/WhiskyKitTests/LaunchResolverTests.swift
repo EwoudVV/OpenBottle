@@ -91,6 +91,20 @@ struct LaunchResolverTests {
                                 "DXVK_FRAME_RATE": "120"
                             },
                             "dllOverrides": []
+                        },
+                        {
+                            "id": "sharp",
+                            "label": "Sharp",
+                            "isDefault": false,
+                            "settings": {
+                                "graphicsBackend": "dxmt",
+                                "dxvkAsync": false,
+                                "performancePreset": "balanced"
+                            },
+                            "environmentVariables": {
+                                "DXMT_METALFX_SPATIAL_SWAPCHAIN": "1"
+                            },
+                            "dllOverrides": []
                         }
                     ]
                 }
@@ -117,6 +131,45 @@ struct LaunchResolverTests {
         #expect(plan.gameProfileEnvironment["DXVK_FRAME_RATE"] == "120")
         #expect(plan.provenance.count == 1)
         #expect(plan.provenance[0].contains("Casualties: Unknown Demo"))
+    }
+
+    @Test("An applied configuration selects its exact variant")
+    func appliedConfigurationSelectsVariant() throws {
+        let selection = GameConfigSnapshot(
+            appliedEntryId: "casualties-unknown-demo",
+            appliedVariantId: "sharp"
+        )
+
+        let plan = try LaunchResolver.plan(
+            steamAppId: 4_576_510,
+            appliedConfiguration: selection,
+            entries: fixtureEntries()
+        )
+
+        #expect(plan.overrides.graphicsBackend == .dxmt)
+        #expect(plan.overrides.dxvkAsync == false)
+        #expect(plan.overrides.performancePreset == .balanced)
+        #expect(plan.gameProfileEnvironment["DXMT_METALFX_SPATIAL_SWAPCHAIN"] == "1")
+        #expect(plan.gameProfileEnvironment["DXVK_FRAME_RATE"] == nil)
+        #expect(plan.provenance[0].contains("Sharp"))
+    }
+
+    @Test("A stale applied configuration falls back to the default variant")
+    func staleAppliedConfigurationFallsBack() throws {
+        let selection = GameConfigSnapshot(
+            appliedEntryId: "another-game",
+            appliedVariantId: "sharp"
+        )
+
+        let plan = try LaunchResolver.plan(
+            steamAppId: 4_576_510,
+            appliedConfiguration: selection,
+            entries: fixtureEntries()
+        )
+
+        #expect(plan.overrides.graphicsBackend == .dxvk)
+        #expect(plan.gameProfileEnvironment["DXVK_FRAME_RATE"] == "120")
+        #expect(plan.gameProfileEnvironment["DXMT_METALFX_SPATIAL_SWAPCHAIN"] == nil)
     }
 
     @Test("User overrides win over GameDB fields")

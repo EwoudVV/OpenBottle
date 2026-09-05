@@ -44,6 +44,8 @@ time worse.
 
 ## 3. turn measurements into profiles
 
+- [x] keep an explicitly applied profile selected for Steam launches, with a safe
+      fallback when the saved entry or variant no longer exists
 - [ ] give every profile a source, hardware record, date, runtime versions, and
       confidence level
 - [ ] keep safe defaults separate from experimental renderer and upscaler choices

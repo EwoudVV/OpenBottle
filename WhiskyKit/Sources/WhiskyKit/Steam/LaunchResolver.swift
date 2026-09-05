@@ -35,7 +35,7 @@ public struct LaunchPlan {
 }
 
 /// Turns a Steam App ID into a ``LaunchPlan`` by matching the GameDB and
-/// merging its recommended variant under the user's own overrides.
+/// merging its selected or recommended variant under the user's own overrides.
 public enum LaunchResolver {
     /// Builds the launch plan for a game.
     ///
@@ -45,6 +45,9 @@ public enum LaunchResolver {
     ///   - exeName: Optional executable name hint for matching.
     ///   - userOverrides: The user's persisted per-program overrides. Every
     ///     non-nil field wins over the GameDB recommendation.
+    ///   - appliedConfiguration: The configuration currently applied to the
+    ///     bottle. Its variant is used only when its entry and variant IDs both
+    ///     match the current database; stale selections fall back to the default.
     ///   - entries: The GameDB entries to match against. Defaults to the
     ///     bundled database.
     /// - Returns: A plan; without a GameDB match it simply carries the user
@@ -53,14 +56,25 @@ public enum LaunchResolver {
         steamAppId: Int,
         exeName: String? = nil,
         userOverrides: ProgramOverrides? = nil,
+        appliedConfiguration: GameConfigSnapshot? = nil,
         entries: [GameDBEntry]? = nil
     ) -> LaunchPlan {
         let database = entries ?? GameDBLoader.loadDefaults()
         let metadata = ProgramMetadata(exeName: exeName ?? "", steamAppId: steamAppId)
 
-        guard let match = GameMatcher.bestMatch(metadata: metadata, against: database),
-              let variant = match.recommendedVariant
-        else {
+        guard let match = GameMatcher.bestMatch(metadata: metadata, against: database) else {
+            return LaunchPlan(
+                overrides: userOverrides ?? ProgramOverrides(),
+                gameProfileEnvironment: [:],
+                provenance: []
+            )
+        }
+
+        let appliedVariant = appliedConfiguration.flatMap { selection -> GameConfigVariant? in
+            guard selection.appliedEntryId == match.entry.id else { return nil }
+            return match.entry.variants.first { $0.id == selection.appliedVariantId }
+        }
+        guard let variant = appliedVariant ?? match.recommendedVariant else {
             return LaunchPlan(
                 overrides: userOverrides ?? ProgramOverrides(),
                 gameProfileEnvironment: [:],
