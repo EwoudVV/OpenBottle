@@ -3812,13 +3812,14 @@
         },
         {
           "id": "dxmt-metalfx-2x-experimental",
-          "label": "DXMT + MetalFX 2x (experimental)",
+          "label": "DXMT + MetalFX 2x (M1 Max)",
           "isDefault": false,
-          "whenToUse": "Try when a 1728x1117 render looks soft on a 3456x2234 display",
+          "whenToUse": "Use on the tested 3456x2234 M1 Max display when the normal 1728x1117 output looks soft",
           "rationale": [
             "DXMT can reconstruct the low-resolution Direct3D 11 swapchain with MetalFX",
             "A 2x scale maps 1728x1117 to the tested MacBook panel's native pixel grid",
-            "The 60 FPS cap reduced DXMT menu CPU use from 320.44% to 157.72%"
+            "The 60 FPS cap reduced DXMT menu CPU use from 320.44% to 157.72%",
+            "A 21-minute play session completed four races and looked close to native resolution"
           ],
           "settings": {
             "graphicsBackend": "dxmt",
@@ -3836,12 +3837,20 @@
             "DXMT_METALFX_SPATIAL_SWAPCHAIN": "1"
           },
           "dllOverrides": [],
-          "winetricksVerbs": []
+          "winetricksVerbs": [],
+          "testedWith": {
+            "lastTestedAt": "2026-09-05T23:11:54Z",
+            "macOSVersion": "26.5.2",
+            "wineVersion": "11.0",
+            "whiskyVersion": "3.6.1",
+            "cpuArchitecture": "arm64"
+          }
         }
       ],
       "notes": [
         "The sharp mode assumes a 1728x1117 game render on a 3456x2234 display",
-        "DXMT + MetalFX still needs visual verification during actual driving",
+        "DXMT + MetalFX passed a 21-minute visual and gameplay check on the tested M1 Max",
+        "Other display sizes and Mac models still need testing",
         "Vehicle calculation and map loading need a separate CPU profile"
       ],
       "knownIssues": [
@@ -3854,6 +3863,11 @@
           "description": "Vehicle calculation and map loading are slower than expected",
           "severity": "major",
           "workaround": "No verified runtime fix yet; these operations need a focused CPU profile"
+        },
+        {
+          "description": "A small amount of input latency remained in the 60 FPS MetalFX test",
+          "severity": "minor",
+          "workaround": "Compare the opt-in 120 FPS mode; its CPU cost has not been measured yet"
         }
       ],
       "provenance": {

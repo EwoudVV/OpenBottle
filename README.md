@@ -19,8 +19,9 @@ name and bundle identifiers internally while the project boundary is being
 established.
 
 the first target is [Screw Drivers](https://store.steampowered.com/app/1279510/Screw_Drivers/)
-on an M1 Max MacBook Pro. it runs through Wine 11 and Direct3D 11, but full display
-resolution is too slow and the lower working resolution looks soft.
+on an M1 Max MacBook Pro. full-resolution rendering was too slow and the lower
+working resolution looked soft. DXMT and MetalFX now render at 1728x1117 and
+reconstruct the result to the panel's 3456x2234 pixel grid.
 
 | mode | average game CPU | main menu ready |
 | --- | ---: | ---: |
@@ -30,19 +31,22 @@ resolution is too slow and the lower working resolution looks soft.
 | DXMT, 60 FPS cap | 157.7% | 43 s |
 
 macOS reports 100% CPU as roughly one fully occupied core. these numbers come
-from 60-second main-menu samples at 1728x1117. they do not include a trustworthy
-FPS measurement yet, so they are evidence about CPU cost rather than a complete
-renderer ranking. the full method and limits are in
+from 60-second main-menu samples at 1728x1117. a later 21-minute MetalFX play
+session completed four races and averaged 210.2% game CPU. it looked close to a
+native-resolution run, with a small amount of input latency still noticeable.
+there is no trustworthy FPS measurement yet, so the numbers are evidence about
+CPU cost rather than a complete renderer ranking. the full method and limits are in
 [the benchmark record](docs/benchmarks/screw-drivers-2026-09-05.md).
 
 ## first playable experiment
 
-the measured default remains DXVK with a 60 FPS cap. the first sharp-output
-experiment uses DXMT's MetalFX spatial scaler to reconstruct 1728x1117 to the
-MacBook panel's 3456x2234 pixel grid. it stays experimental until it has been
-checked visually and measured during actual driving.
+the measured default remains DXVK with a 60 FPS cap. the sharp-output experiment
+uses DXMT's MetalFX spatial scaler and has now passed its first real play test on
+the M1 Max. it stays opt-in until the corrected Steam launch is repeated and its
+frame times are measured.
 
-the reversible launcher and the things to check are in
+the reversible launcher, the lower-latency 120 FPS comparison, and the things to
+check are in
 [experiments/screw-drivers](experiments/screw-drivers/README.md).
 
 vehicle calculation and map loading are separate CPU workloads. the next test

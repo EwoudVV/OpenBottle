@@ -50,6 +50,27 @@ every backend hash check passed. every restoration hash check passed. the DXVK
 log reported Direct3D 11 feature level 11.0 and the DXMT log reported feature
 level 11.1 on the Apple M1 Max.
 
+## first full play session
+
+the 60 FPS DXMT + MetalFX 2x launcher then ran for 21 minutes and 3 seconds. it
+collected 1,227 process samples with 210.23% average game CPU and 5,942.3 MB
+average resident memory. the game moved through its garage, building, selection,
+and driving scenes, completed four races, wrote four ghost results, awarded XP,
+and updated driven distance.
+
+the visual result looked close to native resolution during actual driving. the
+UI remained usable and no visible upscaling problem was reported. a small amount
+of input latency remained. frame times were not captured, so this is a successful
+visual and playability check rather than a complete latency result.
+
+the first direct test launch also exposed a save-path bug: its Windows working
+directory was `C:\windows`, so that session created a separate fresh save instead
+of changing the older Steam-managed save beside the game. both trees were copied
+into one timestamped backup and all 812 payload hashes passed verification. the
+launcher now uses Steam's `-applaunch 1279510` path, waits for Steam Cloud's
+per-game evaluation after exit, and refuses to run while a separate save still
+needs a deliberate choice.
+
 ## what this says
 
 DXMT did much more work when uncapped. its 60 FPS limiter cut average CPU use by
@@ -77,7 +98,7 @@ details. this file contains the scrubbed result.
 
 ## next test
 
-the first visual candidate is DXMT with:
+the working visual configuration is DXMT with:
 
 ```text
 DXMT_METALFX_SPATIAL_SWAPCHAIN=1
@@ -85,7 +106,11 @@ DXMT_CONFIG=d3d11.preferredMaxFrameRate=60;d3d11.metalSpatialUpscaleFactor=2.0
 ```
 
 the 2x factor maps the current 1728x1117 render to the panel's 3456x2234 pixel
-grid. it needs a visual check for sharpness, artifacts, UI scale, and frame pacing.
+grid. DXMT already keeps this swapchain at one queued frame, so there is no extra
+queue depth to remove. the next controlled comparison is the same route at 60
+and 120 FPS. 120 FPS cuts the target frame interval from about 16.7 ms to 8.3 ms,
+but the earlier uncapped result shows that it will probably use substantially more
+CPU.
 
 after that, one repeatable vehicle calculation and one map load need event markers
 and process samples. those operations are the useful CPU test; an idle menu cannot

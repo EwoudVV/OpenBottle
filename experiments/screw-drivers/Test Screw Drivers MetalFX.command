@@ -2,11 +2,29 @@
 
 set -euo pipefail
 
-mode="${1:-run}"
-if [[ "$mode" != "run" && "$mode" != "--check" ]]; then
-    echo "Usage: $0 [--check]" >&2
-    exit 64
-fi
+action=run
+profile=balanced
+frame_cap=60
+case "${1:-}" in
+    ""|run)
+        ;;
+    --check)
+        action=check
+        ;;
+    --lower-latency)
+        profile=lower-latency
+        frame_cap=120
+        ;;
+    --check-lower-latency)
+        action=check
+        profile=lower-latency
+        frame_cap=120
+        ;;
+    *)
+        echo "Usage: $0 [--check|--lower-latency|--check-lower-latency]" >&2
+        exit 64
+        ;;
+esac
 
 bottles_root="$HOME/Library/Containers/com.franke.Whisky/Bottles"
 runtime="$HOME/Library/Application Support/com.franke.Whisky/Libraries"
@@ -17,9 +35,8 @@ dxmt_root="$runtime/DXMT"
 
 game_suffix='/drive_c/Program Files (x86)/Steam/steamapps/common/Screw Drivers/Screw Drivers.exe'
 steam_windows='C:\Program Files (x86)\Steam\steam.exe'
-game_windows='C:\Program Files (x86)\Steam\steamapps\common\Screw Drivers\Screw Drivers.exe'
+app_id=1279510
 virtual_desktop='OpenBottleMetalFX,1728x1117'
-frame_cap=60
 scale_factor=2.0
 
 required_files=(
@@ -58,9 +75,11 @@ bottle_name="$(plutil -extract info.name raw "$metadata")"
 wine_user="$(id -un)"
 player_log="$bottle/drive_c/users/$wine_user/AppData/LocalLow/Creactstudios/Screw Drivers/Player.log"
 steam_login_log="$bottle/drive_c/Program Files (x86)/Steam/logs/steamui_login.txt"
+steam_cloud_log="$bottle/drive_c/Program Files (x86)/Steam/logs/cloud_log.txt"
 explorer_hash="$(printf '%s' '/drive_c/windows/explorer.exe' | shasum -a 256 | awk '{print substr($1, 1, 8)}')"
 explorer_settings="$bottle/Program Settings/explorer-$explorer_hash.plist"
 explorer_history="$bottle/Program Settings/explorer.exe.run-history.plist"
+separate_save="$bottle/drive_c/windows/saveables.dat"
 
 dll_names=(d3d11.dll dxgi.dll d3d10core.dll winemetal.dll)
 dll_dirs=(system32 syswow64)
@@ -76,7 +95,7 @@ for dll_dir in "${dll_dirs[@]}"; do
     done
 done
 
-if [[ "$mode" == "--check" ]]; then
+if [[ "$action" == "check" ]]; then
     echo "Screw Drivers MetalFX test is ready."
     echo "Bottle: $bottle_name"
     echo "Bottle path: $bottle"
@@ -84,8 +103,18 @@ if [[ "$mode" == "--check" ]]; then
     echo "DXMT: $(plutil -extract dxmtVersion raw "$runtime/WhiskyWineVersion.plist")"
     echo "Render: 1728x1117"
     echo "Output target: 3456x2234"
+    echo "Profile: $profile"
     echo "Frame cap: $frame_cap"
+    if [[ -f "$separate_save" ]]; then
+        echo "Separate direct-launch save detected at C:\\windows. Preserve or migrate it before cleanup."
+    fi
     exit 0
+fi
+
+if [[ -f "$separate_save" ]]; then
+    echo "A separate direct-launch save exists at C:\\windows." >&2
+    echo "Choose which save to keep active before starting another test." >&2
+    exit 1
 fi
 
 if pgrep -f "$bottle" >/dev/null 2>&1; then
@@ -94,7 +123,7 @@ if pgrep -f "$bottle" >/dev/null 2>&1; then
 fi
 
 run_stamp="$(date -u '+%Y%m%dT%H%M%SZ')"
-run_dir="$HOME/Library/Logs/OpenBottle/screw-drivers-metalfx-$run_stamp"
+run_dir="$HOME/Library/Logs/OpenBottle/screw-drivers-metalfx-$profile-$run_stamp"
 original_dir="$run_dir/original"
 mkdir -p "$original_dir"
 
@@ -204,7 +233,7 @@ if [[ "$explorer_settings_existed" -eq 0 ]]; then
 fi
 
 plutil -replace graphicsConfig.backend -string dxmt "$metadata"
-plutil -replace metalConfig.metalHud -bool true "$metadata"
+plutil -replace metalConfig.metalHud -bool false "$metadata"
 plutil -remove environment.DXVK_FRAME_RATE "$explorer_settings" >/dev/null 2>&1 || true
 plutil -remove environment.DXMT_CONFIG "$explorer_settings" >/dev/null 2>&1 || true
 plutil -remove environment.DXMT_METALFX_SPATIAL_SWAPCHAIN "$explorer_settings" >/dev/null 2>&1 || true
@@ -222,7 +251,9 @@ plutil -insert environment.DXMT_METALFX_SPATIAL_SWAPCHAIN -string 1 "$explorer_s
     echo "dxmt=$(plutil -extract dxmtVersion raw "$runtime/WhiskyWineVersion.plist")"
     echo "render_resolution=1728x1117"
     echo "scale_factor=$scale_factor"
+    echo "profile=$profile"
     echo "frame_cap=$frame_cap"
+    echo "launch_method=steam-applaunch"
 } > "$run_dir/run-info.txt"
 
 login_start_line=0
@@ -250,9 +281,14 @@ if [[ "$steam_ready" -ne 1 ]]; then
     exit 1
 fi
 
+cloud_sync_count_before=0
+if [[ -f "$steam_cloud_log" ]]; then
+    cloud_sync_count_before="$(grep -F -c "[AppID $app_id] Starting sync (eval,)" "$steam_cloud_log" 2>/dev/null || true)"
+    [[ -z "$cloud_sync_count_before" ]] && cloud_sync_count_before=0
+fi
+
 launch_epoch="$(date +%s)"
-"$whisky_cli" run "$bottle_name" 'C:\windows\explorer.exe' -- \
-    "/desktop=$virtual_desktop" "$game_windows" \
+"$whisky_cli" run "$bottle_name" "$steam_windows" -- -applaunch "$app_id" \
     -screen-fullscreen 0 -screen-width 1728 -screen-height 1117 \
     >> "$run_dir/launcher.log" 2>&1 &
 game_launcher_pid=$!
@@ -272,6 +308,10 @@ fi
 
 echo "game_pid=$game_pid" >> "$run_dir/run-info.txt"
 echo "game_process_seconds=$(( $(date +%s) - launch_epoch ))" >> "$run_dir/run-info.txt"
+game_unix_cwd="$(lsof -a -p "$game_pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n 1 || true)"
+if [[ -n "$game_unix_cwd" ]]; then
+    echo "game_unix_cwd=$game_unix_cwd" >> "$run_dir/run-info.txt"
+fi
 
 current_log=0
 for _ in $(seq 1 30); do
@@ -309,6 +349,7 @@ done
 echo "epoch,utc,pid,cpu_percent,rss_kb,threads,elapsed" > "$run_dir/process-samples.csv"
 echo
 echo "Screw Drivers is running with DXMT + MetalFX 2x."
+echo "Frame cap: $frame_cap FPS ($profile profile)."
 echo "Compare sharpness, motion, UI scale, and artifacts."
 echo "Quit the game normally when you are done; this window will restore the original setup."
 echo "Run record: $run_dir"
@@ -328,6 +369,40 @@ done
 
 cp -p "$player_log" "$run_dir/Player.log" 2>/dev/null || true
 echo "ended_utc=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$run_dir/run-info.txt"
+
+echo "Waiting for Steam Cloud to evaluate the save..."
+cloud_sync_status=not-observed
+for _ in $(seq 1 60); do
+    current_sync_count=0
+    if [[ -f "$steam_cloud_log" ]]; then
+        current_sync_count="$(grep -F -c "[AppID $app_id] Starting sync (eval,)" "$steam_cloud_log" 2>/dev/null || true)"
+        [[ -z "$current_sync_count" ]] && current_sync_count=0
+    fi
+    if [[ "$current_sync_count" -gt "$cloud_sync_count_before" ]]; then
+        awk -v app_id="$app_id" '
+            index($0, "[AppID " app_id "] Starting sync (eval,)") {
+                block = ""
+                capture = 1
+            }
+            capture && index($0, "[AppID " app_id "]") {
+                block = block $0 "\n"
+            }
+            END {printf "%s", block}
+        ' "$steam_cloud_log" > "$run_dir/cloud-sync-after-exit.log"
+        if grep -F -q "[AppID $app_id] Eval complete" "$run_dir/cloud-sync-after-exit.log"; then
+            cloud_sync_status=complete
+            break
+        fi
+    fi
+    sleep 1
+done
+echo "cloud_sync_after_exit=$cloud_sync_status" >> "$run_dir/run-info.txt"
+
+if [[ -f "$separate_save" ]]; then
+    echo "save_location_error=C:\\windows" >> "$run_dir/run-info.txt"
+    echo "Warning: this run wrote another separate save under C:\\windows." >&2
+    echo "It has been left in place for recovery." >&2
+fi
 
 restore_original
 wait "$steam_launcher_pid" 2>/dev/null || true
