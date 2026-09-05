@@ -42,6 +42,9 @@ experiment uses DXMT's MetalFX spatial scaler to reconstruct 1728x1117 to the
 MacBook panel's 3456x2234 pixel grid. it stays experimental until it has been
 checked visually and measured during actual driving.
 
+the reversible launcher and the things to check are in
+[experiments/screw-drivers](experiments/screw-drivers/README.md).
+
 vehicle calculation and map loading are separate CPU workloads. the next test
 will sample the game while those operations happen instead of assuming a graphics
 backend can fix them.
