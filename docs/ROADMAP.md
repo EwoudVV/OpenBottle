@@ -10,6 +10,7 @@ evidence to explain which layer made the difference.
 - [x] clone it into the canonical `Documents/projects/OpenBottle` folder
 - [x] keep `frankea/Whisky` as the upstream Git remote
 - [x] record the first Screw Drivers renderer comparison
+- [x] enable GitHub Actions and pass the full inherited CI workflow
 - [ ] rename the app, targets, bundle identifiers, and user-facing strings without
       breaking existing Whisky bottles
 - [ ] replace inherited release, update, documentation, and Homebrew links
