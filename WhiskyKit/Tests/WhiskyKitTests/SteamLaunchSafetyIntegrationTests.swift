@@ -38,7 +38,8 @@ struct SteamLaunchSafetyIntegrationTests {
         let created = try await journal.begin(
             bottleID: BottleLaunchIdentity.id(for: bottle.url),
             gameID: "screw-drivers",
-            identifier: identifier
+            identifier: identifier,
+            at: Date(timeIntervalSince1970: 100)
         )
         let orchestrator = SteamClientOrchestrator(
             bottle: bottle,
