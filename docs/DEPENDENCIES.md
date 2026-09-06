@@ -41,8 +41,8 @@ incorrect value will block every fresh install.
 
 ## Bundled in the app
 
-These ship **inside the app bundle** (`Whisky.app/Contents/Resources/`), committed to this repo under
-[`Libraries/`](../Libraries) and copied in by the app target's "Embed WhiskyCmd" build phase. They are
+These ship **inside the app bundle** (`OpenBottle.app/Contents/Resources/`), committed to this repo under
+[`Libraries/`](../Libraries) and copied in by the app target's "Embed OpenBottleCmd" build phase. They are
 **not** part of the downloaded `Libraries.tar.gz` runtime — bundling them in the app means a fix reaches
 every install through a normal app update, with no runtime re-download.
 

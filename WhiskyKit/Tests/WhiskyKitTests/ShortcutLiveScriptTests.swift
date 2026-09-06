@@ -26,7 +26,7 @@ struct ShortcutLiveScriptTests {
     func steamScript() {
         let script = ShortcutCreator.liveLaunchScript(for: .steamGame(appId: 4_576_510))
 
-        #expect(script.contains(#"exec "$WHISKY_CMD" launch 4576510"#))
+        #expect(script.contains(#"exec "$OPENBOTTLE_CMD" launch 4576510"#))
         #expect(script.contains("mdfind"))
     }
 
@@ -36,7 +36,7 @@ struct ShortcutLiveScriptTests {
             for: .program(bottleName: "Steam dx11", windowsPath: #"C:\Games\Some Game\game.exe"#)
         )
 
-        #expect(script.contains(#"exec "$WHISKY_CMD" run 'Steam dx11' 'C:\Games\Some Game\game.exe'"#))
+        #expect(script.contains(#"exec "$OPENBOTTLE_CMD" run 'Steam dx11' 'C:\Games\Some Game\game.exe'"#))
     }
 
     @Test("Hostile names survive shell quoting")

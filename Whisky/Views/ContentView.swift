@@ -76,7 +76,7 @@ struct ContentView: View {
                 NSPasteboard.general.setString(alert.diagnostics, forType: .string)
             }
             Button("open.logs") {
-                WhiskyApp.openLogsFolder()
+                OpenBottleApp.openLogsFolder()
             }
             Button("button.ok", role: .cancel) {}
         } message: { alert in
@@ -210,7 +210,7 @@ struct ContentView: View {
             // Skip the first-launch setup sheet and update check under UI testing:
             // tests run without a runtime, so this would otherwise drop a modal
             // sheet over the main window and race every toolbar interaction.
-            guard !WhiskyApp.isUITesting else { return }
+            guard !OpenBottleApp.isUITesting else { return }
 
             if !WhiskyWineInstaller.isWhiskyWineInstalled() {
                 showSetup = true

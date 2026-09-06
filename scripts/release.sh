@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License along with Whisky.
 # If not, see https://www.gnu.org/licenses/.
 #
-# Builds, signs, notarizes, staples, and packages Whisky.app as a DMG.
+# Builds, signs, notarizes, staples, and packages OpenBottle.app as a DMG.
 #
 # Prerequisites:
 #   - Developer ID Application certificate installed in Keychain
@@ -31,17 +31,17 @@ NOTARY_PROFILE="${NOTARY_PROFILE:-AC_PASSWORD}"
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_DIR="$PROJECT_DIR/build/release"
-ARCHIVE_PATH="$BUILD_DIR/Whisky.xcarchive"
+ARCHIVE_PATH="$BUILD_DIR/OpenBottle.xcarchive"
 EXPORT_PATH="$BUILD_DIR/export"
-DMG_PATH="$BUILD_DIR/Whisky-$VERSION.dmg"
+DMG_PATH="$BUILD_DIR/OpenBottle-$VERSION.dmg"
 
 cd "$PROJECT_DIR"
 mkdir -p "$BUILD_DIR"
 
-echo "==> Archiving Whisky $VERSION"
+echo "==> Archiving OpenBottle $VERSION"
 xcodebuild \
-    -project Whisky.xcodeproj \
-    -scheme Whisky \
+    -project OpenBottle.xcodeproj \
+    -scheme OpenBottle \
     -configuration Release \
     -destination 'generic/platform=macOS' \
     -archivePath "$ARCHIVE_PATH" \
@@ -57,8 +57,8 @@ xcodebuild \
     -exportOptionsPlist scripts/exportOptions.plist \
     -allowProvisioningUpdates
 
-APP_PATH="$EXPORT_PATH/Whisky.app"
-[ -d "$APP_PATH" ] || { echo "Whisky.app not found at $APP_PATH"; exit 1; }
+APP_PATH="$EXPORT_PATH/OpenBottle.app"
+[ -d "$APP_PATH" ] || { echo "OpenBottle.app not found at $APP_PATH"; exit 1; }
 
 echo "==> Verifying signature"
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
@@ -66,7 +66,7 @@ codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 echo "==> Building DMG"
 rm -f "$DMG_PATH"
 hdiutil create \
-    -volname "Whisky" \
+    -volname "OpenBottle" \
     -srcfolder "$APP_PATH" \
     -ov -format UDZO \
     "$DMG_PATH"

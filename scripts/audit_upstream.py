@@ -233,7 +233,7 @@ def collect_citations() -> dict[int, list[dict]]:
     citations: dict[int, list[dict]] = defaultdict(list)
     grep_paths = [
         "CHANGELOG.md", "README.md", "docs", ".planning",
-        "Whisky", "WhiskyKit", "WhiskyCmd", "scripts",
+        "Whisky", "WhiskyKit", "OpenBottleCmd", "scripts",
     ]
     existing = [p for p in grep_paths if (REPO_ROOT / p).exists()]
     if existing:

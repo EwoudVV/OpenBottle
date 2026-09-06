@@ -1,5 +1,5 @@
 //
-//  WhiskyURL.swift
+//  OpenBottleURL.swift
 //  WhiskyKit
 //
 //  This file is part of Whisky.
@@ -18,15 +18,15 @@
 
 import Foundation
 
-/// What a `whisky://` URL is allowed to say.
+/// What an `openbottle://` URL is allowed to say.
 ///
 /// This parser is the security boundary of the URL scheme, which is why it
 /// lives apart from the code that acts on it and is tested on its own. There
 /// are exactly two forms and no third:
 ///
 /// ```
-/// whisky://launch?steam=<appid>[&bottle=<name>]
-/// whisky://launch?pin=<name>[&bottle=<name>]
+/// openbottle://launch?steam=<appid>[&bottle=<name>]
+/// openbottle://launch?pin=<name>[&bottle=<name>]
 /// ```
 ///
 /// Neither can name an executable. A `path=` form would let any web page pick
@@ -39,7 +39,7 @@ import Foundation
 /// Parsing does not decide whether the target exists. That is
 /// `QuickLaunch`'s job, and it happens before the user is asked to confirm, so
 /// the confirmation can name what will actually run.
-public enum WhiskyURL {
+public enum OpenBottleURL {
     /// A well-formed request. `bottle` narrows the search when the same app ID
     /// or pin name exists in more than one bottle.
     public enum Request: Equatable, Sendable {
@@ -47,7 +47,7 @@ public enum WhiskyURL {
         case pin(name: String, bottle: String?)
     }
 
-    public static let scheme = "whisky"
+    public static let scheme = ProductIdentity.urlScheme
 
     /// Parses a URL, or returns `nil` for anything that is not one of the two
     /// forms, including a different scheme, a different host, a missing or

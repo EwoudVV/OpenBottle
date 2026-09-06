@@ -50,7 +50,7 @@ flags:
     paths:
       - WhiskyKit/Sources/**
     carryforward: true
-  whiskyapp:
+  openbottleapp:
     paths:
       - Whisky/**
     carryforward: true
@@ -59,7 +59,7 @@ flags:
 ignore:
   - "WhiskyKit/Tests/**"
   - "WhiskyTests/**"
-  - "WhiskyUITests/**"
+  - "OpenBottleUITests/**"
   - "**/*.generated.swift"
   - "**/Preview Content/**"
 

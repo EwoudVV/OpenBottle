@@ -21,7 +21,7 @@ import os.log
 import WhiskyKit
 
 /// Launching from surfaces that live outside the main window: the Dock menu,
-/// the menu-bar extra, and `whisky://` URLs.
+/// the menu-bar extra, and `openbottle://` URLs.
 ///
 /// The URL scheme is the identity layer for all of them. Every surface here
 /// names a target the same way a URL does, an installed Steam app ID or a pin
@@ -31,7 +31,7 @@ import WhiskyKit
 /// through the same door as a launch from the window. Anything added later that
 /// starts a program from outside the window belongs here, resolving the same
 /// two identifiers, rather than growing its own path handling. Why a URL may
-/// only ever name those two things is ``WhiskyKit/WhiskyURL``.
+/// only ever name those two things is ``WhiskyKit/OpenBottleURL``.
 @MainActor
 enum QuickLaunch {
     private static let logger = Logger(
@@ -83,9 +83,9 @@ enum QuickLaunch {
         alert.runModal()
     }
 
-    // MARK: - whisky:// URLs
+    // MARK: - openbottle:// URLs
 
-    /// A target a `whisky://` URL named, already resolved against real state.
+    /// A target a `openbottle://` URL named, already resolved against real state.
     ///
     /// Resolution happens before the confirmation, not after, so the dialog can
     /// name what will actually run rather than echoing back the app ID the page
@@ -121,11 +121,11 @@ enum QuickLaunch {
     /// ``rememberApproval(of:)``.
     static let approvedURLTargetsKey = "urlLaunchApprovedTargets"
 
-    /// Handles a `whisky://` URL. Returns `false` for any other scheme so
+    /// Handles a `openbottle://` URL. Returns `false` for any other scheme so
     /// file opens keep flowing to `FileOpenView`.
     ///
     /// What a URL may say, and why there are only two forms, is
-    /// ``WhiskyKit/WhiskyURL``. This handles what a well-formed one does.
+    /// ``WhiskyKit/OpenBottleURL``. This handles what a well-formed one does.
     ///
     /// A URL cannot name an executable, so nothing arbitrary runs, but a page
     /// the user did not mean to visit can still start a game they own. So a URL
@@ -134,9 +134,9 @@ enum QuickLaunch {
     /// first use. The Dock menu and the menu-bar extra do not confirm: the user
     /// is already in the app and already clicked the thing.
     static func handle(_ url: URL) -> Bool {
-        guard url.scheme?.lowercased() == WhiskyURL.scheme else { return false }
-        guard let request = WhiskyURL.parse(url) else {
-            logger.error("Unrecognized whisky URL: \(url.absoluteString, privacy: .public)")
+        guard url.scheme?.lowercased() == OpenBottleURL.scheme else { return false }
+        guard let request = OpenBottleURL.parse(url) else {
+            logger.error("Unrecognized OpenBottle URL: \(url.absoluteString, privacy: .public)")
             return true
         }
 

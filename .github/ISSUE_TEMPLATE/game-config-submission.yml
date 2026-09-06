@@ -10,7 +10,7 @@ body:
         If the game is broken and you need help, use the **Game Compatibility Report** template instead.
 
         **Before filing:**
-        - Check the **Game Configurations** browser inside Whisky; the game may already have an entry.
+        - Check the **Game Configurations** browser inside OpenBottle; the game may already have an entry.
         - If an entry exists but your settings work better, file anyway and say what should change.
   - type: input
     id: game-name
@@ -71,9 +71,9 @@ body:
       label: Remaining issues with this config
       description: Anything that still misbehaves (minor glitches, audio quirks, performance notes), so the entry can say so honestly.
   - type: input
-    id: whisky-version
+    id: openbottle-version
     attributes:
-      label: Whisky version
+      label: OpenBottle version
       placeholder: "e.g., 3.5.2 (About window)"
     validations:
       required: true
@@ -98,5 +98,5 @@ body:
       options:
         - label: I tested this config on a fresh bottle (not one carrying unrelated tweaks).
           required: true
-        - label: I'm running this fork (`frankea/Whisky`, confirmed via **Whisky → About**).
+        - label: I'm running OpenBottle (`EwoudVV/OpenBottle`, confirmed via **OpenBottle → About OpenBottle**).
           required: true

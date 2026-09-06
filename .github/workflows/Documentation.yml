@@ -58,7 +58,7 @@ jobs:
             --target WhiskyKit \
             --disable-indexing \
             --transform-for-static-hosting \
-            --hosting-base-path Whisky \
+            --hosting-base-path OpenBottle \
             --output-path ../docs
 
       - name: Stage distribution files
@@ -77,7 +77,7 @@ jobs:
     name: Deploy to GitHub Pages
     # Keep the upstream deployment working. Forks opt in after their own Pages
     # environment is ready by setting PUBLISH_DOCUMENTATION to true.
-    if: github.repository == 'frankea/Whisky' || vars.PUBLISH_DOCUMENTATION == 'true'
+    if: vars.PUBLISH_DOCUMENTATION == 'true'
     needs: build-docs
     runs-on: ubuntu-latest
     environment:

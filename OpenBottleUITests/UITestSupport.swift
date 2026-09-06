@@ -1,6 +1,6 @@
 //
 //  UITestSupport.swift
-//  WhiskyUITests
+//  OpenBottleUITests
 //
 //  This file is part of Whisky.
 //
@@ -20,13 +20,13 @@ import XCTest
 
 /// Shared setup and the waiting helpers, so the suites below read as tests
 /// rather than as XCUITest plumbing.
-class WhiskyUITestCase: XCTestCase {
+class OpenBottleUITestCase: XCTestCase {
     var app: XCUIApplication!
 
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments += ["-WhiskyUITestMode", "1"]
+        app.launchArguments += ["-OpenBottleUITestMode", "1"]
         app.launch()
         // Frontmost before interacting: a non-key window makes toolbar elements
         // unhittable — the usual source of "element missing" flakiness.

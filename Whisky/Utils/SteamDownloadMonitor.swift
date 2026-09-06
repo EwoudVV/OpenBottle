@@ -269,6 +269,6 @@ class SteamDownloadMonitor: ObservableObject {
 extension Notification.Name {
     /// Posted when a Steam download stall is detected.
     static let steamDownloadStallDetected = Notification.Name(
-        "com.franke.Whisky.steamDownloadStallDetected"
+        "io.github.ewoudvv.OpenBottle.steamDownloadStallDetected"
     )
 }

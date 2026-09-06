@@ -19,15 +19,16 @@
 import SwiftUI
 import WhiskyKit
 
-/// Lets the user import bottles created by the archived original Whisky app, which this
-/// fork doesn't see automatically because it uses a different bundle identifier. Bottles
-/// are referenced in place (not copied), so the import is non-destructive.
+/// Copies bottles from an existing Whisky installation into OpenBottle's private storage.
 struct MigrateBottlesSheet: View {
     @EnvironmentObject var bottleVM: BottleVM
     @Environment(\.dismiss) private var dismiss
 
     @State private var rows: [Row] = []
     @State private var didLoad = false
+    @State private var isImporting = false
+    @State private var importError: String?
+    @State private var importedCount = 0
 
     private struct Row: Identifiable {
         let bottle: LegacyBottleImport.DiscoveredBottle
@@ -55,16 +56,25 @@ struct MigrateBottlesSheet: View {
         }
         .frame(width: 460, height: 420)
         .onAppear(perform: loadIfNeeded)
+        .interactiveDismissDisabled(isImporting)
+        .alert("Couldn't import bottles", isPresented: Binding(
+            get: { importError != nil },
+            set: { if !$0 { importError = nil } }
+        )) {
+            Button("OK") { importError = nil }
+        } message: {
+            Text(importError ?? "")
+        }
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Import Bottles from the Original Whisky")
+            Text("Import from Whisky")
                 .font(.headline)
             Text(
                 """
-                These bottles were created by the archived original Whisky app. Importing references \
-                them in place — your files aren't moved or copied, and the original app keeps working.
+                OpenBottle makes and verifies its own copy. Your Whisky bottles stay where they are \
+                and Whisky keeps working.
                 """
             )
             .font(.subheadline)
@@ -81,7 +91,7 @@ struct MigrateBottlesSheet: View {
                 Image(systemName: "tray")
                     .font(.largeTitle)
                     .foregroundStyle(.secondary)
-                Text("No bottles from the original Whisky were found.")
+                Text("No Whisky bottles were found.")
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -96,6 +106,9 @@ struct MigrateBottlesSheet: View {
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
+                            Text(row.bottle.sourceBundleIdentifier)
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
                         }
                     }
                 }
@@ -105,15 +118,23 @@ struct MigrateBottlesSheet: View {
 
     private var footer: some View {
         HStack {
+            if isImporting {
+                ProgressView(value: Double(importedCount), total: Double(max(selectedCount, 1)))
+                    .frame(width: 120)
+            }
             if !rows.isEmpty {
                 Button(allSelected ? "Deselect All" : "Select All", action: toggleAll)
+                    .disabled(isImporting)
             }
             Spacer()
             Button("Cancel", role: .cancel) { dismiss() }
                 .keyboardShortcut(.cancelAction)
-            Button("Import Selected", action: importSelected)
-                .keyboardShortcut(.defaultAction)
-                .disabled(selectedCount == 0)
+                .disabled(isImporting)
+            Button("Copy Selected") {
+                Task { await importSelected() }
+            }
+            .keyboardShortcut(.defaultAction)
+            .disabled(selectedCount == 0 || isImporting)
         }
         .padding()
     }
@@ -129,19 +150,36 @@ struct MigrateBottlesSheet: View {
         guard !didLoad else { return }
         didLoad = true
         rows = LegacyBottleImport
-            .importableBottles(existingPaths: bottleVM.bottlesList.paths)
+            .allImportableBottles(existingPaths: bottleVM.bottlesList.paths)
             .map { Row(bottle: $0, isSelected: true) }
     }
 
-    private func importSelected() {
-        let existing = bottleVM.bottlesList.paths
-        let toAdd = rows.filter(\.isSelected).map(\.bottle.url).filter { !existing.contains($0) }
-        if !toAdd.isEmpty {
-            // Assign once: `BottleData.paths` re-encodes the registry plist in its didSet,
-            // so appending in a loop would rewrite it N times.
-            bottleVM.bottlesList.paths = existing + toAdd
+    private func importSelected() async {
+        isImporting = true
+        importedCount = 0
+        defer { isImporting = false }
+        var imported: [URL] = []
+        do {
+            for row in rows where row.isSelected {
+                let source = row.bottle.url
+                let result = try await Task.detached(priority: .userInitiated) {
+                    try BottleImporter.copy(
+                        bottleAt: source,
+                        to: BottleData.defaultBottleDir
+                    )
+                }.value
+                imported.append(result.bottleURL)
+                importedCount += 1
+            }
+            let existing = bottleVM.bottlesList.paths
+            bottleVM.bottlesList.paths = existing + imported.filter { !existing.contains($0) }
+            bottleVM.loadBottles()
+            dismiss()
+        } catch {
+            let existing = bottleVM.bottlesList.paths
+            bottleVM.bottlesList.paths = existing + imported.filter { !existing.contains($0) }
+            bottleVM.loadBottles()
+            importError = error.localizedDescription
         }
-        bottleVM.loadBottles()
-        dismiss()
     }
 }

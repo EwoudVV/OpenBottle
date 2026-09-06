@@ -79,8 +79,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Check en-GB covers every string
+      - name: Check product identity and en-GB coverage
         run: |
+          ./scripts/openbottle-identity.py --check || {
+            echo ""
+            echo "Run ./scripts/openbottle-identity.py locally and commit the result."
+            exit 1
+          }
           ./scripts/british-english.py --check || {
             echo ""
             echo "Run ./scripts/british-english.py locally and commit the result."
@@ -103,8 +108,8 @@ jobs:
           filters: |
             app:
               - 'Whisky/**'
-              - 'WhiskyUITests/**'
-              - 'Whisky.xcodeproj/**'
+              - 'OpenBottleUITests/**'
+              - 'OpenBottle.xcodeproj/**'
               - '.github/workflows/CI.yml'
 
   # All three schemes build in one job: they share WhiskyKit and most compiled
@@ -140,9 +145,9 @@ jobs:
       # SwiftLint build phase automatically skips when CI=true (set by GitHub Actions)
       - name: Build
         run: |
-          for scheme in Whisky WhiskyCmd WhiskyThumbnail; do
+          for scheme in OpenBottle OpenBottleCmd OpenBottleThumbnail; do
             echo "::group::Build $scheme"
-            xcodebuild -project Whisky.xcodeproj \
+            xcodebuild -project OpenBottle.xcodeproj \
               -scheme "$scheme" \
               -configuration Debug \
               build \
@@ -155,13 +160,13 @@ jobs:
       # Guards against the class of regression fixed in #134: a resource that the
       # app expects at runtime silently not making it into the bundle. winetricks
       # and its verb catalog are shipped in Contents/Resources (like cabextract);
-      # if the "Embed WhiskyCmd" copy phase drops them, dependency installs break
+      # if the "Embed OpenBottleCmd" copy phase drops them, dependency installs break
       # at runtime but the build stays green — so assert on the built artifact.
       - name: Verify bundled app resources
         run: |
           # Ask for the exact product path rather than globbing DerivedData:
-          # a loose glob can also catch WhiskyUITests-Runner.app.
-          app=$(xcodebuild -project Whisky.xcodeproj -scheme Whisky -configuration Debug \
+          # a loose glob can also catch OpenBottleUITests-Runner.app.
+          app=$(xcodebuild -project OpenBottle.xcodeproj -scheme OpenBottle -configuration Debug \
             -showBuildSettings 2>/dev/null \
             | awk -F' = ' '
                 /^ *BUILT_PRODUCTS_DIR = /  { dir = $2 }
@@ -182,7 +187,7 @@ jobs:
           [ "$missing" -eq 0 ] || exit 1
           echo "Bundled resources present: winetricks, verbs.txt, cabextract"
 
-  # XCUITest job - runs WhiskyUITests against the Whisky app target.
+  # XCUITest job - runs OpenBottleUITests against the OpenBottle app target.
   # Tests that need bottle fixtures call `try requireBottleFixture()` which
   # XCTSkips them when the user container is empty (always true on a fresh
   # CI runner). The fixture-free tests - create-bottle sheet flow and the
@@ -197,7 +202,7 @@ jobs:
   # app still compiles in `build`. Pushes to main always run the full suite,
   # so a Kit change that alters UI behavior is still caught post-merge.
   ui-test:
-    name: WhiskyUITests
+    name: OpenBottleUITests
     needs: [lint, format, changes]
     if: github.event_name != 'pull_request' || needs.changes.outputs.app == 'true'
     runs-on: macos-15
@@ -222,18 +227,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-spm-
 
-      - name: Run WhiskyUITests
+      - name: Run OpenBottleUITests
         run: |
           rm -rf TestResults.xcresult
           # Retry failed tests up to 3 total runs. XCUITests against a SwiftUI
           # surface are timing-sensitive (e.g. waiting for the create-bottle
           # sheet to render on a busy CI runner), so a single flake shouldn't
           # red-X main. A genuinely broken test still fails after all retries.
-          xcodebuild -project Whisky.xcodeproj \
-            -scheme Whisky \
+          xcodebuild -project OpenBottle.xcodeproj \
+            -scheme OpenBottle \
             -configuration Debug \
             -destination 'platform=macOS' \
-            -only-testing:WhiskyUITests \
+            -only-testing:OpenBottleUITests \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults.xcresult \
             -retry-tests-on-failure \
@@ -243,8 +248,8 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
 
-      # App-target (Whisky scheme) coverage from the UI-test run, uploaded under the
-      # `whiskyapp` Codecov flag so the SwiftUI app/CLI/thumbnail aren't completely
+      # App-target (OpenBottle scheme) coverage from the UI-test run, uploaded under the
+      # `openbottleapp` Codecov flag so the SwiftUI app/CLI/thumbnail aren't completely
       # dark. This is BEST-EFFORT: every step below is `continue-on-error`, so a broken
       # extraction just means no app-target number that run and can never gate CI.
       - name: Convert app-target coverage to Cobertura
@@ -266,7 +271,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage-app.xml
-          flags: whiskyapp
+          flags: openbottleapp
           fail_ci_if_error: false
           verbose: true
 

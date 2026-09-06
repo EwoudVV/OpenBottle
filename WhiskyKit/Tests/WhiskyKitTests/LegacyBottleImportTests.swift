@@ -113,6 +113,7 @@ final class LegacyBottleImportTests: XCTestCase {
         let discovered = LegacyBottleImport.importableBottles(legacyContainer: container, existingPaths: [])
         XCTAssertEqual(discovered.map(\.url), [bottle])
         XCTAssertEqual(discovered.first?.name, "my-bottle")
+        XCTAssertEqual(discovered.first?.sourceBundleIdentifier, container.lastPathComponent)
 
         // Discovery is non-destructive: the original metadata is untouched.
         XCTAssertEqual(try Data(contentsOf: metadata), before)
@@ -162,5 +163,32 @@ final class LegacyBottleImportTests: XCTestCase {
 
     func testLegacyContainerExists() {
         XCTAssertTrue(LegacyBottleImport.legacyContainerExists(at: container))
+    }
+
+    func testDiscoversBothWhiskySourcesAndDeduplicatesTheirPaths() throws {
+        let firstContainer = container.appending(path: "com.franke.Whisky")
+        let secondContainer = container.appending(path: "com.isaacmarovitz.Whisky")
+        let firstBottles = firstContainer.appending(path: "Bottles")
+        let secondBottles = secondContainer.appending(path: "Bottles")
+        let first = try makeBottle("current", in: firstBottles)
+        let second = try makeBottle("original", in: secondBottles)
+        let sources = [
+            LegacyBottleImport.Source(
+                bundleIdentifier: "com.franke.Whisky",
+                containerDirectory: firstContainer
+            ),
+            LegacyBottleImport.Source(
+                bundleIdentifier: "com.isaacmarovitz.Whisky",
+                containerDirectory: secondContainer
+            )
+        ]
+
+        let discovered = LegacyBottleImport.allImportableBottles(
+            sources: sources,
+            existingPaths: []
+        )
+
+        XCTAssertEqual(Set(discovered.map(\.url)), Set([first, second]))
+        XCTAssertEqual(Set(discovered.map(\.sourceBundleIdentifier)), Set(sources.map(\.bundleIdentifier)))
     }
 }

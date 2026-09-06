@@ -21,7 +21,7 @@ import Foundation
 /// Creates macOS `.app` shortcut bundles for launching Windows programs via Wine.
 ///
 /// This caseless enum provides shared shortcut creation logic used by both
-/// the Whisky app and WhiskyCmd CLI. It handles bundle structure creation,
+/// the OpenBottle app and OpenBottleCmd CLI. It handles bundle structure creation,
 /// launch script writing, and Info.plist generation.
 ///
 /// Icon extraction and Finder integration remain in the app target
@@ -138,7 +138,7 @@ public extension ShortcutCreator {
         return .program(bottleName: bottle.settings.name, windowsPath: windowsPath)
     }
 
-    /// A launch script that goes through Whisky's live pipeline (WhiskyCmd)
+    /// A launch script that goes through OpenBottle's live pipeline (OpenBottleCmd)
     /// instead of baking the environment at creation time: current settings,
     /// GameDB profiles, backend deployment, and run logs all apply at launch,
     /// and nothing breaks when the bottle moves or settings change.
@@ -151,17 +151,17 @@ public extension ShortcutCreator {
         }
 
         return """
-        WHISKY_CMD="/Applications/Whisky.app/Contents/Resources/WhiskyCmd"
-        if [ ! -x "$WHISKY_CMD" ]; then
-            WHISKY_APP="$(mdfind "kMDItemCFBundleIdentifier == '\(Bundle
+        OPENBOTTLE_CMD="/Applications/OpenBottle.app/Contents/Resources/OpenBottleCmd"
+        if [ ! -x "$OPENBOTTLE_CMD" ]; then
+            OPENBOTTLE_APP="$(mdfind "kMDItemCFBundleIdentifier == '\(Bundle
             .whiskyBundleIdentifier)'" 2>/dev/null | head -n 1)"
-            WHISKY_CMD="$WHISKY_APP/Contents/Resources/WhiskyCmd"
+            OPENBOTTLE_CMD="$OPENBOTTLE_APP/Contents/Resources/OpenBottleCmd"
         fi
-        if [ ! -x "$WHISKY_CMD" ]; then
-            osascript -e 'display alert "Whisky not found" message "Install Whisky to use this shortcut."'
+        if [ ! -x "$OPENBOTTLE_CMD" ]; then
+            osascript -e 'display alert "OpenBottle not found" message "Install OpenBottle to use this shortcut."'
             exit 1
         fi
-        exec "$WHISKY_CMD" \(invocation)
+        exec "$OPENBOTTLE_CMD" \(invocation)
         """
     }
 

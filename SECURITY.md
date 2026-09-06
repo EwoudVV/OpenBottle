@@ -1,111 +1,35 @@
-# Security Policy
+# Security policy
 
-## Supported Versions
+OpenBottle is early software. Security fixes are made on `main` and included in
+the next preview. Old previews are not supported after a newer one is published.
 
-The following versions of Whisky are currently supported with security updates:
+## reporting a vulnerability
 
-| Version | Supported          |
-| ------- | ------------------ |
-| Latest  | :white_check_mark: |
-| < Latest | :x:               |
+Please use GitHub's private
+[vulnerability report](https://github.com/EwoudVV/OpenBottle/security/advisories/new).
+Do not put an unpatched vulnerability in a public issue.
 
-We recommend always using the latest version of Whisky for the best security and feature support.
+Include the affected version, what an attacker can do, steps to reproduce it,
+and any fix you already tested. Reports about Wine, DXMT, DXVK, MoltenVK, or
+another dependency should also go to that upstream project, but tell OpenBottle
+when the problem can be reached through a normal game launch.
 
-## Reporting a Vulnerability
+## trust boundary
 
-If you discover a security vulnerability in Whisky, please report it responsibly:
+Windows programs launched through Wine can read files that Wine exposes to the
+prefix. OpenBottle does not turn an untrusted Windows executable into safe code.
+Only run software you trust and review the folders mapped into its bottle.
 
-1. **Do not** open a public GitHub issue for security vulnerabilities
-2. **Use** GitHub's private vulnerability reporting feature via the **Security** tab of this repository:
-   - Navigate to **Security** → **Report a vulnerability**
-   - Or use this direct link: [Report a vulnerability](https://github.com/frankea/Whisky/security/advisories/new)
-3. **Include** the following information in your report:
-   - Description of the vulnerability
-   - Steps to reproduce the issue
-   - Potential impact assessment
-   - Any suggested fixes (optional)
+OpenBottle verifies downloaded runtime manifests and archives before installing
+them. Existing Whisky bottles are discovered read-only and migration makes a
+verified copy; the source is never adopted or changed in place.
 
-### What to Expect
+## private data
 
-- **Acknowledgment**: We will acknowledge receipt of your report within 48 hours
-- **Assessment**: We will assess the vulnerability and determine its severity
-- **Timeline**: We aim to address critical vulnerabilities within 7 days, and other issues within 30 days
-- **Credit**: With your permission, we will credit you in the security advisory
+OpenBottle does not have a telemetry endpoint or send compatibility reports by
+default. Saves, launch history, diagnostics, hardware details, and compatibility
+results stay on the Mac unless the user exports and shares them. Diagnostic
+exports redact home paths and known token patterns.
 
-### Scope
-
-This security policy applies to:
-- The Whisky application
-- WhiskyKit library
-- Related command-line tools (WhiskyCmd)
-- Build and release infrastructure
-
-### Out of Scope
-
-The following are generally out of scope:
-- Vulnerabilities in Wine itself (report to [WineHQ](https://wiki.winehq.org/Bugs))
-- Vulnerabilities in DXVK (report to the respective project)
-- Issues in third-party dependencies (report upstream, then notify us)
-
-### Wine / DXVK Vulnerability Response
-
-Whisky bundles a Wine runtime (Wine, DXVK, D3DMetal, and related components) that it does not develop.
-A vulnerability in those components is fixed upstream, not here — but it still reaches Whisky users, so
-we track it as a runtime-currency concern rather than a closed door:
-
-- Bundled component versions are pinned and checked against their upstream sources, so a new upstream
-  build carrying a security fix is surfaced rather than missed.
-- A **critical** vulnerability in a bundled component (one exploitable through normal Whisky use) is a
-  trigger to rebuild the runtime archive on the patched upstream version and cut a new app release out
-  of band, rather than waiting for the next scheduled runtime update.
-- Non-critical upstream fixes are picked up as part of the normal runtime-update cadence.
-
-If you believe a bundled-runtime vulnerability is being mishandled or under-prioritized in Whisky's
-packaging, report it through the private channel above and say so explicitly.
-
-## Telemetry & Data Collection
-
-Whisky sends no data by default. An **opt-in** (default off) first-run checkbox
-— mirrored by a toggle in Settings → Privacy — enables exactly five anonymous
-events: `runtime_install_started`, `runtime_install_succeeded`,
-`runtime_install_failed` (with a coarse `reason` property:
-`download_failed` / `verify_failed` / `tarball_missing` / `extract_failed` /
-`runtime_incomplete`), `first_bottle_created`, and
-`first_program_launch_attempted`. `runtime_install_started` fires once per setup
-pass; `runtime_install_succeeded` / `runtime_install_failed` are per install
-attempt (so retries are counted); the two `first_…` events fire at most once per
-install.
-
-Events carry a random per-install anonymous ID and never include personal data,
-file names, paths, or raw error text. Every event Whisky can send is the list
-above, and all of it — plus the SDK configuration — lives in one file,
-[`Whisky/Utils/Telemetry.swift`](Whisky/Utils/Telemetry.swift): all automatic
-capture (lifecycle events, screen views, feature flags, swizzling) is disabled,
-`personProfiles` is `.never`, and `identify()` is never called, so no person
-profile is created.
-
-The PostHog SDK attaches its own standard context to every event. On macOS
-(posthog-ios 3.59.x) this comprises: app name, app version, and app build plus
-the bundle identifier; macOS version; hardware model and a derived hardware
-name; device type (`Desktop`); the device manufacturer (`Apple`); locale;
-timezone; screen width/height; network-type flags (Wi-Fi / cellular); the SDK
-name and version; a session id created at launch (rotated after 30 minutes of
-inactivity, so a long-running session can span more than one); and a few non-personal environment
-flags (install source such as TestFlight or sideloaded, and emulator/Catalyst
-indicators). None of this is tied to your identity. PostHog's ingestion also sees the connecting IP like any HTTPS
-request, with GeoIP enrichment disabled (`$geoip_disable`).
-
-Opting out stops all future capture and resets the anonymous ID. Events already
-queued at that moment may still be delivered (posthog-ios 3.59.x has no public
-queue-purge), but no new events are captured.
-
-## Security Best Practices for Users
-
-- Only run trusted Windows applications within Whisky
-- Keep Whisky and macOS updated to the latest versions
-- Be cautious when downloading Windows executables from untrusted sources
-- Review application permissions before running unknown software
-
-## Acknowledgments
-
-We thank the security research community for helping keep Whisky secure.
+The save vault stores local copies inside OpenBottle's own application data.
+Restores are verified and keep the replaced save as a rollback point.

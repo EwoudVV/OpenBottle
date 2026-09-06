@@ -57,27 +57,23 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.franke.Whisky</string>
+			<string>io.github.ewoudvv.OpenBottle</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>whisky</string>
+				<string>openbottle</string>
 			</array>
 		</dict>
 	</array>
 	<key>NSDesktopFolderUsageDescription</key>
-	<string>Whisky needs access to Desktop to create shortcuts for Windows programs.</string>
+	<string>OpenBottle needs access to Desktop to create shortcuts for Windows programs.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
-	<string>Whisky needs access to this folder to manage Wine bottles and install Windows dependencies.</string>
+	<string>OpenBottle needs access to this folder to manage Wine environments and install Windows dependencies.</string>
 	<key>NSNetworkVolumesUsageDescription</key>
-	<string>Whisky needs access to network volumes when bottles are stored on network drives.</string>
+	<string>OpenBottle needs access to network volumes when games are stored on network drives.</string>
 	<key>NSRemovableVolumesUsageDescription</key>
-	<string>Whisky needs access to removable volumes when bottles are stored on external drives.</string>
-	<key>PostHogProjectToken</key>
-	<string>phc_LJiR538eQO7W24OkTeGFyi3m53BzJCVKEY7c46Lodrh</string>
+	<string>OpenBottle needs access to removable volumes when games are stored on external drives.</string>
 	<key>SUFeedURL</key>
-	<string>https://frankea.github.io/Whisky/appcast.xml</string>
-	<key>SUPublicEDKey</key>
-	<string>rJHUOL+DnZ2+w0irWNhkZmt3SfYMyy1qcEPEmIGuszM=</string>
+	<string>https://ewoudvv.github.io/OpenBottle/appcast.xml</string>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>

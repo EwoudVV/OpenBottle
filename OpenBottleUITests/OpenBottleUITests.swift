@@ -1,6 +1,6 @@
 //
-//  WhiskyUITests.swift
-//  WhiskyUITests
+//  OpenBottleUITests.swift
+//  OpenBottleUITests
 //
 //  This file is part of Whisky.
 //
@@ -18,7 +18,7 @@
 
 import XCTest
 
-final class WhiskyUITests: WhiskyUITestCase {
+final class OpenBottleUITests: OpenBottleUITestCase {
     func testAppLaunchesAndShowsBottleDetail() throws {
         try requireBottleFixture()
         require(app.buttons["nav.bottleConfiguration"], "bottle nav row", timeout: 8)

@@ -1,5 +1,5 @@
 //
-//  WhiskyCmd.swift
+//  OpenBottleCmd.swift
 //  Whisky
 //
 //  This file is part of Whisky.
@@ -20,14 +20,17 @@ import AppKit
 import Foundation
 import WhiskyKit
 
-class WhiskyCmd {
+class OpenBottleCmd {
     static func install() async {
-        let whiskyCmdURL = Bundle.main.url(forResource: "WhiskyCmd", withExtension: nil)
+        let openBottleCmdURL = Bundle.main.url(
+            forResource: ProductIdentity.commandExecutable,
+            withExtension: nil
+        )
 
-        if let whiskyCmdURL {
+        if let openBottleCmdURL {
             // Use .esc to escape shell metacharacters and prevent command injection
             let script = """
-            do shell script "ln -fs \(whiskyCmdURL.esc) /usr/local/bin/whisky" with administrator privileges
+            do shell script "ln -fs \(openBottleCmdURL.esc) /usr/local/bin/openbottle" with administrator privileges
             """
 
             var error: NSDictionary?

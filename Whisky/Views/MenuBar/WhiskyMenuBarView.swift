@@ -46,7 +46,7 @@ struct WhiskyMenuBarView: View {
 
         Divider()
         Button("kill.bottles") {
-            WhiskyApp.killBottles()
+            OpenBottleApp.killBottles()
         }
         Button("menubar.quit") {
             NSApplication.shared.terminate(nil)
@@ -85,11 +85,11 @@ struct WhiskyMenuBarView: View {
         // old predicate could bring *it* forward — or, when Settings was the only
         // open window, leave the main window unopened — on "Open Whisky".
         if let window = NSApp.windows.first(where: {
-            $0.identifier?.rawValue.hasPrefix(WhiskyApp.mainWindowID) == true && $0.canBecomeMain
+            $0.identifier?.rawValue.hasPrefix(OpenBottleApp.mainWindowID) == true && $0.canBecomeMain
         }) {
             window.makeKeyAndOrderFront(nil)
         } else {
-            openWindow(id: WhiskyApp.mainWindowID)
+            openWindow(id: OpenBottleApp.mainWindowID)
         }
     }
 }

@@ -60,15 +60,19 @@ extension Bottle {
     }
 
     func openTerminal() {
-        guard let whiskyCmdURL = Bundle.main.url(forResource: "WhiskyCmd", withExtension: nil) else { return }
+        guard let openBottleCmdURL = Bundle.main.url(
+            forResource: ProductIdentity.commandExecutable,
+            withExtension: nil
+        )
+        else { return }
 
-        // Build a shell command that sources the WhiskyCmd environment.
+        // Build a shell command that sources the OpenBottleCmd environment.
         // Single-quoted through ShellQuoting: `.esc` backslash-escapes spaces,
         // and inside double quotes bash keeps those backslashes, so any bottle
-        // name with a space reached WhiskyCmd as `QA\ Smoke` and failed to
+        // name with a space reached OpenBottleCmd as `QA\ Smoke` and failed to
         // resolve.
-        let whiskyCmd = whiskyCmdURL.path(percentEncoded: false)
-        let shellenv = ShellQuoting.commandLine([whiskyCmd, "shellenv", settings.name])
+        let openBottleCmd = openBottleCmdURL.path(percentEncoded: false)
+        let shellenv = ShellQuoting.commandLine([openBottleCmd, "shellenv", settings.name])
         let command = "eval \"$(\(shellenv))\""
         let scriptContent = "#!/bin/bash\n\(command)\n"
 

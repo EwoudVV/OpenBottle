@@ -1,12 +1,4 @@
-name: Update Homebrew Tap
-
-# When an app release (app-vX.Y.Z) is published, bump the frankea/homebrew-whisky
-# cask to the new version + DMG sha256 so `brew install --cask frankea/whisky/whisky`
-# always tracks the latest release without a manual edit.
-#
-# Requires a repository secret BREW_TOKEN: a personal access token (classic `repo`,
-# or fine-grained with Contents: write) for frankea/homebrew-whisky. The default
-# GITHUB_TOKEN cannot push to a different repository.
+name: Update OpenBottle Homebrew Tap
 
 on:
   release:
@@ -14,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: App release tag to sync (e.g. app-v3.1.0)
+        description: OpenBottle app release tag, such as app-v0.1.0
         required: true
 
 permissions:
@@ -22,58 +14,36 @@ permissions:
 
 jobs:
   update-tap:
-    # Only app releases; the Wine Libraries stream uses bare vX.Y.Z tags and has no cask.
-    if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'app-v') }}
+    if: ${{ vars.HOMEBREW_TAP_REPOSITORY != '' && (github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'app-v')) }}
     runs-on: ubuntu-latest
     steps:
-      - name: Bump cask to the released version
+      - name: Bump OpenBottle cask
         env:
           BREW_TOKEN: ${{ secrets.BREW_TOKEN }}
           TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          TAP_REPOSITORY: ${{ vars.HOMEBREW_TAP_REPOSITORY }}
         run: |
           set -euo pipefail
-
-          if [ -z "${BREW_TOKEN:-}" ]; then
-            echo "::error::BREW_TOKEN secret is not set. Add a PAT with Contents:write for frankea/homebrew-whisky."
-            exit 1
-          fi
+          [ -n "${BREW_TOKEN:-}" ] || { echo "::error::BREW_TOKEN is not set"; exit 1; }
 
           version="${TAG#app-v}"
-          # Strictly validate the version before it flows into URLs and the sed
-          # expressions below — refuse anything that isn't a dotted numeric version.
-          if ! printf '%s' "$version" | grep -qE '^[0-9]+(\.[0-9]+)*$'; then
-            echo "::error::Refusing to sync: '${version}' (from tag '${TAG}') is not a dotted numeric version."
-            exit 1
-          fi
-          url="https://github.com/frankea/Whisky/releases/download/${TAG}/Whisky-${version}.dmg"
-          echo "Syncing tap to ${version} from ${url}"
+          printf '%s' "$version" | grep -qE '^[0-9]+(\.[0-9]+)*$' \
+            || { echo "::error::invalid app release tag: $TAG"; exit 1; }
 
-          curl -fSL "$url" -o whisky.dmg
-          sha="$(sha256sum whisky.dmg | awk '{print $1}')"
-          echo "sha256=${sha}"
+          url="https://github.com/EwoudVV/OpenBottle/releases/download/${TAG}/OpenBottle-${version}.dmg"
+          curl -fSL "$url" -o openbottle.dmg
+          sha="$(sha256sum openbottle.dmg | awk '{print $1}')"
 
-          git clone --depth 1 "https://x-access-token:${BREW_TOKEN}@github.com/frankea/homebrew-whisky.git" tap
+          git clone --depth 1 "https://x-access-token:${BREW_TOKEN}@github.com/${TAP_REPOSITORY}.git" tap
           cd tap
-          sed -i -E "s/version \"[^\"]+\"/version \"${version}\"/" Casks/whisky.rb
-          sed -i -E "s/sha256 \"[0-9a-f]{64}\"/sha256 \"${sha}\"/" Casks/whisky.rb
+          test -f Casks/openbottle.rb
+          sed -i -E "s/version \"[^\"]+\"/version \"${version}\"/" Casks/openbottle.rb
+          sed -i -E "s/sha256 \"[0-9a-f]{64}\"/sha256 \"${sha}\"/" Casks/openbottle.rb
+          grep -qF "version \"${version}\"" Casks/openbottle.rb
+          grep -qF "sha256 \"${sha}\"" Casks/openbottle.rb
 
-          # `sed -i` exits 0 even when it matches nothing, so assert both edits
-          # actually landed. Otherwise a partial match (e.g. the existing sha256
-          # line not being 64-lowercase-hex) could push a cask carrying the new
-          # version with a stale hash — silently breaking `brew install` for
-          # every user while the workflow stays green.
-          grep -qF "version \"${version}\"" Casks/whisky.rb \
-            || { echo "::error::version line was not updated in Casks/whisky.rb"; exit 1; }
-          grep -qF "sha256 \"${sha}\"" Casks/whisky.rb \
-            || { echo "::error::sha256 line was not updated (existing line not 64-lowercase-hex?)"; exit 1; }
-
-          if git diff --quiet; then
-            echo "Cask already at ${version}; nothing to do."
-            exit 0
-          fi
-
+          git diff --quiet && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "whisky ${version}"
+          git commit -am "openbottle ${version}"
           git push
-          echo "Tap updated to whisky ${version}."

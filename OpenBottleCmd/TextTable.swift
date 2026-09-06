@@ -1,6 +1,6 @@
 //
 //  TextTable.swift
-//  WhiskyCmd
+//  OpenBottleCmd
 //
 //  This file is part of Whisky.
 //

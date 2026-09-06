@@ -1,208 +1,83 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Whisky — Run Windows games and apps on macOS via Wine</title>
-<meta name="description" content="Whisky is a native SwiftUI Wine wrapper for macOS with DXMT and DXVK graphics backends. Active community fork of the archived whisky-app/whisky. Apple Silicon, signed and notarized.">
-<meta name="author" content="Adam Franke">
-<meta name="theme-color" content="#1d1d1f" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#fbfbfd" media="(prefers-color-scheme: light)">
-<link rel="canonical" href="https://frankea.github.io/Whisky/">
-<link rel="icon" href="favicon.ico">
-<link rel="mask-icon" href="favicon.svg" color="#333333">
-
-<!-- Open Graph / Twitter Card -->
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://frankea.github.io/Whisky/">
-<meta property="og:title" content="Whisky — Run Windows games and apps on macOS via Wine">
-<meta property="og:description" content="Native SwiftUI Wine wrapper for macOS with DXMT and DXVK backends. Active community fork of the archived whisky-app/whisky.">
-<meta property="og:image" content="https://raw.githubusercontent.com/frankea/Whisky/main/images/og-card.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Whisky — Run Windows games and apps on macOS, using Wine. Apple Silicon, macOS 15+, GPL v3.">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Whisky — Run Windows games and apps on macOS via Wine">
-<meta name="twitter:description" content="Native SwiftUI Wine wrapper for macOS with DXMT and DXVK backends. Active community fork of the archived whisky-app/whisky.">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/frankea/Whisky/main/images/og-card.png">
-
-<!-- JSON-LD -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "Whisky",
-  "operatingSystem": "macOS 15.0+",
-  "applicationCategory": "GameApplication",
-  "applicationSubCategory": "Wine wrapper",
-  "softwareVersion": "3.6.0",
-  "license": "https://www.gnu.org/licenses/gpl-3.0.html",
-  "downloadUrl": "https://github.com/frankea/Whisky/releases/latest",
-  "url": "https://github.com/frankea/Whisky",
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-}
-</script>
-
-<style>
-:root {
-  color-scheme: light dark;
-  --bg: #fbfbfd;
-  --fg: #1d1d1f;
-  --muted: #6e6e73;
-  --accent: #ce8b41;
-  --rule: #d2d2d7;
-  --code-bg: #f5f5f7;
-  --link: #0066cc;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1d1d1f;
-    --fg: #f5f5f7;
-    --muted: #a1a1a6;
-    --rule: #424245;
-    --code-bg: #2c2c2e;
-    --link: #2997ff;
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenBottle — Windows games on Mac</title>
+  <meta name="description" content="A free, open-source macOS app that chooses and preserves a working Wine setup for each Windows game.">
+  <link rel="canonical" href="https://ewoudvv.github.io/OpenBottle/">
+  <link rel="icon" href="favicon.ico">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ewoudvv.github.io/OpenBottle/">
+  <meta property="og:title" content="OpenBottle — Windows games on Mac">
+  <meta property="og:description" content="Install a game, press Play, and keep its known-good runtime, graphics profile, and local restore points.">
+  <meta property="og:image" content="https://raw.githubusercontent.com/EwoudVV/OpenBottle/main/images/og-card.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "OpenBottle",
+    "operatingSystem": "macOS 15.0+",
+    "applicationCategory": "GameApplication",
+    "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+    "url": "https://github.com/EwoudVV/OpenBottle",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
   }
-}
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
-body {
-  background: var(--bg);
-  color: var(--fg);
-  font: 17px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-}
-main { max-width: 740px; margin: 0 auto; padding: 80px 24px; }
-header { margin-bottom: 48px; }
-h1 { font-size: 48px; line-height: 1.05; margin: 0 0 8px 0; letter-spacing: -0.02em; }
-h2 { font-size: 24px; margin: 48px 0 12px 0; letter-spacing: -0.01em; }
-.tagline { font-size: 21px; color: var(--muted); margin: 0; }
-p { margin: 0 0 16px 0; }
-a { color: var(--link); text-decoration: none; }
-a:hover { text-decoration: underline; }
-ul { padding-left: 22px; }
-li { margin: 4px 0; }
-pre, code {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 14.5px;
-}
-pre {
-  background: var(--code-bg);
-  padding: 14px 16px;
-  border-radius: 8px;
-  overflow-x: auto;
-  margin: 12px 0;
-}
-code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; }
-pre code { background: none; padding: 0; }
-.cta {
-  display: inline-block;
-  background: var(--accent);
-  color: white;
-  padding: 12px 22px;
-  border-radius: 8px;
-  font-weight: 500;
-  margin: 8px 12px 8px 0;
-}
-.cta:hover { text-decoration: none; opacity: 0.9; }
-.cta.secondary {
-  background: transparent;
-  color: var(--fg);
-  border: 1px solid var(--rule);
-}
-hr { border: 0; border-top: 1px solid var(--rule); margin: 56px 0; }
-.muted { color: var(--muted); font-size: 14px; }
-.notice {
-  background: var(--code-bg);
-  border-left: 3px solid var(--accent);
-  padding: 12px 16px;
-  border-radius: 4px;
-  margin: 16px 0;
-}
-img.screenshot {
-  max-width: 100%;
-  border-radius: 8px;
-  border: 1px solid var(--rule);
-  margin: 16px 0;
-}
-</style>
+  </script>
+  <style>
+    :root { color-scheme: light dark; --bg: #fbfbfd; --card: #fff; --text: #1d1d1f; --muted: #626268; --line: #d6d6da; --accent: #2f6fed; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #111216; --card: #1c1e24; --text: #f5f5f7; --muted: #a8a8af; --line: #383a43; --accent: #76a0ff; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; }
+    main { width: min(820px, calc(100% - 40px)); margin: 0 auto; padding: 84px 0 72px; }
+    h1 { margin: 0; font-size: clamp(52px, 10vw, 88px); line-height: .98; letter-spacing: -.055em; }
+    h2 { margin: 52px 0 14px; font-size: 27px; letter-spacing: -.02em; }
+    p { margin: 12px 0; }
+    .lead { max-width: 700px; color: var(--muted); font-size: 24px; line-height: 1.35; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 12px; margin: 30px 0 38px; }
+    .button { display: inline-block; padding: 12px 18px; border: 1px solid var(--line); border-radius: 11px; color: var(--text); text-decoration: none; font-weight: 600; }
+    .button.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+    .notice, .step { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .step strong { display: block; margin-bottom: 6px; }
+    ul { padding-left: 22px; }
+    li { margin: 7px 0; }
+    a { color: var(--accent); }
+    footer { color: var(--muted); margin-top: 62px; padding-top: 22px; border-top: 1px solid var(--line); font-size: 14px; }
+    @media (max-width: 650px) { .steps { grid-template-columns: 1fr; } main { padding-top: 50px; } }
+  </style>
 </head>
 <body>
 <main>
+  <header>
+    <h1>OpenBottle</h1>
+    <p class="lead">a free macOS app for running compatible Windows games without learning Wine first.</p>
+    <div class="buttons">
+      <a class="button primary" href="https://github.com/EwoudVV/OpenBottle/releases">download previews</a>
+      <a class="button" href="https://github.com/EwoudVV/OpenBottle">source on GitHub</a>
+    </div>
+  </header>
 
-<header>
-  <h1>Whisky</h1>
-  <p class="tagline">Run Windows games and applications on macOS, using Wine.</p>
-</header>
+  <div class="notice"><strong>the alpha is still being finished.</strong> Preview builds are for testing until they are signed, notarized, and checked across the full game matrix.</div>
 
-<p>Whisky is a native macOS app that wraps Wine with a clean SwiftUI interface. It ships the DXMT (Direct3D 11 to Metal) and DXVK (Direct3D to Vulkan) graphics translation layers, and includes built-in compatibility for Steam, Epic, EA App, Battle.net, and other launchers.</p>
+  <h2>how it should feel</h2>
+  <div class="steps">
+    <div class="step"><strong>1. add a game</strong>Use Steam, an installer, or a copied Whisky bottle.</div>
+    <div class="step"><strong>2. press Play</strong>OpenBottle picks a safe runtime and graphics profile for this Mac.</div>
+    <div class="step"><strong>3. keep the good setup</strong>Runtime, configuration, and local save restore points survive updates.</div>
+  </div>
 
-<div class="notice">
-<strong>Active community fork.</strong> The original <a href="https://github.com/whisky-app/whisky">whisky-app/whisky</a> was archived in April 2025. This fork, maintained by <a href="https://github.com/frankea">@frankea</a>, continues development. Not affiliated with the original project or getwhisky.app.
-</div>
+  <h2>what it uses</h2>
+  <p>OpenBottle builds on Wine and the open DXMT, DXVK, and MoltenVK graphics paths. Apple's D3DMetal can be imported by the user as an optional proprietary component; it is never redistributed with the open runtime.</p>
 
-<p>
-  <a class="cta" href="https://github.com/frankea/Whisky/releases/latest">Download for macOS</a>
-  <a class="cta secondary" href="https://github.com/frankea/Whisky">View on GitHub</a>
-</p>
+  <h2>the compatibility limit</h2>
+  <p>Some Windows games depend on kernel anti-cheat, drivers, DRM, or graphics features that macOS cannot provide. OpenBottle detects known blockers and explains them before launch. Compatibility claims are tied to a tested game, Mac, runtime, and profile.</p>
 
-<img class="screenshot" src="https://raw.githubusercontent.com/frankea/Whisky/main/images/new-bottle-screenshot.png" alt="Creating a new Wine bottle in Whisky" loading="lazy" width="1200">
-<img class="screenshot" src="https://raw.githubusercontent.com/frankea/Whisky/main/images/config-screenshot.png" alt="Whisky bottle configuration — graphics backend, Wine, and performance settings" loading="lazy" width="1200">
+  <h2>why this exists</h2>
+  <p>The first real test was <em>Screw Drivers</em> on an M1 Max. A measured DXMT and MetalFX setup made a lower internal resolution look close to the Mac's native panel while keeping latency low. The project is turning that one working experiment into the normal flow for many games.</p>
 
-<h2>Install via Homebrew</h2>
-<pre><code>brew install --cask frankea/whisky/whisky</code></pre>
-<p class="muted">Note: the default <code>brew install --cask whisky</code> still installs the archived original. Use the qualified <code>frankea/whisky/whisky</code> form for this fork.</p>
-
-<h2>Requirements</h2>
-<ul>
-  <li>Apple Silicon Mac (M1, M2, M3, M4)</li>
-  <li>macOS Sequoia 15.0 or later</li>
-  <li>~800 MB disk space for the bundled Wine runtime (a ~313 MB download)</li>
-</ul>
-
-<h2>What's included</h2>
-<ul>
-  <li>Wine 11 with macOS-specific patches</li>
-  <li>DXMT (Direct3D 11 to Metal) and DXVK (Direct3D to Vulkan) translation layers, selectable per bottle</li>
-  <li>Launcher compatibility profiles for Steam, Epic, EA App, Battle.net, Rockstar, and more</li>
-  <li>Stability diagnostics with one-click crash report export</li>
-  <li>Game compatibility database with 80+ pre-configured entries</li>
-  <li>Signed and notarized DMG; Sparkle delivers in-app updates</li>
-</ul>
-
-<h2>Graphics backends</h2>
-<p>Whisky translates Direct3D to the Mac GPU with translation layers you pick per bottle:</p>
-<ul>
-  <li><strong>DXMT</strong> (the default behind "Recommended"): Direct3D 11 to Metal, deployed per bottle so one bottle's choice never affects another. The fast path for modern DirectX 11 titles.</li>
-  <li><strong>DXVK</strong>: Direct3D to Vulkan (via MoltenVK), a broad-compatibility fallback for titles DXMT doesn't handle. Pinned at the macOS-compatible 1.10.3 <em>by design</em>: the DXVK 2.x line needs Vulkan features macOS doesn't expose, so a higher version number simply wouldn't run here.</li>
-  <li><strong>D3DMetal</strong>: Apple's layer from the Game Porting Toolkit. The current engine can't execute it, and Whisky says so in the picker instead of silently falling back to something slower. Real support (an engine that runs it, with your own imported GPTK payload) is in active development.</li>
-</ul>
-<p class="muted"><strong>Anti-cheat:</strong> games using kernel-level anti-cheat (EAC, BattlEye, and similar) generally do not run under any Wine-based wrapper on macOS, including Whisky. This is a Wine-wide limitation, not specific to this fork.</p>
-
-<h2>News</h2>
-<ul>
-  <li><strong>2026-08-04: Whisky 3.6.0 released.</strong> The first fully localized release: the entire app is translated in all 22 supported languages, from Arabic to Vietnamese, with translations managed on <a href="https://crowdin.com/project/frankea-whisky">Crowdin</a>. Also new: a Steam games library inside bottles, a Game Porting Toolkit import flow, and <code>whisky games</code> / <code>whisky launch</code> command line tools.</li>
-  <li><strong>2026-07-30: Whisky 3.5.2 released.</strong> Bottles missing from the library are recovered at startup, the graphics backend picker only offers what the engine can run, and first-run engine setup works in day-first locales.</li>
-  <li><strong>2026-07-24: Whisky 3.5.1 released.</strong> Winetricks now ships inside the app, so bottle dependency installs (VC++, .NET, DirectX, fonts) work out of the box.</li>
-  <li><strong>2026-06-14: Whisky 3.5.0 released.</strong> Optional menu bar extra, inline descriptions across bottle configuration, and program scanning off the main thread.</li>
-  <li><strong>2026-06-13: Whisky 3.4.0 released.</strong> DXMT arrives as a selectable per-bottle graphics backend, alongside Wine Libraries 3.1.1.</li>
-</ul>
-<p class="muted">Full history in the <a href="https://github.com/frankea/Whisky/blob/main/CHANGELOG.md">changelog</a>. Release announcements also ship in-app via Sparkle.</p>
-
-<h2>Documentation</h2>
-<ul>
-  <li><a href="documentation/whiskykit/">WhiskyKit API documentation</a> — DocC-generated reference for the framework</li>
-  <li><a href="https://github.com/frankea/Whisky/blob/main/docs/AUDIT.md">Upstream issue audit</a> — per-issue accounting against the archived upstream</li>
-  <li><a href="https://github.com/frankea/Whisky/blob/main/docs/LauncherTroubleshooting.md">Launcher troubleshooting</a></li>
-  <li><a href="https://github.com/frankea/Whisky/blob/main/docs/StabilityTroubleshooting.md">Stability troubleshooting</a></li>
-  <li><a href="https://github.com/frankea/Whisky/blob/main/WhiskyKit/Sources/WhiskyKit/GameDatabase/Resources/GameDB.json">Bundled game configurations</a> — 80+ curated per-game setups, browsable in-app under Game Configurations</li>
-</ul>
-
-<hr>
-
-<p class="muted">Whisky is GPL v3 licensed. Source code, releases, and issue tracker on <a href="https://github.com/frankea/Whisky">GitHub</a>. Whisky is possible thanks to <a href="https://github.com/Gcenx/DXVK-macOS">DXVK-macOS</a>, <a href="https://github.com/marzent/wine-msync">msync</a>, <a href="https://github.com/KhronosGroup/MoltenVK">MoltenVK</a>, <a href="https://github.com/sparkle-project/Sparkle">Sparkle</a>, <a href="https://www.codeweavers.com/crossover">CrossOver</a>, and Apple's D3DMetal.</p>
-
+  <footer>OpenBottle is GPL-3.0 software derived from <a href="https://github.com/frankea/Whisky">Whisky</a>. Wine and every graphics/runtime component keep their own licenses.</footer>
 </main>
 </body>
 </html>

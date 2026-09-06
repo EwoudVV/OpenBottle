@@ -6,11 +6,11 @@ body:
     attributes:
       value: |
         Use this template for **game-specific** issues — a particular game crashing, freezing, rendering wrong, or not launching.
-        For non-game bugs (Whisky UI, bottle creation, etc.), use the **Bug Report** template instead.
+        For non-game bugs (OpenBottle UI, bottle creation, etc.), use the **Bug Report** template instead.
 
         **Before filing:**
-        - Open the **Game Configurations** browser inside Whisky — your game may already have a recommended config.
-        - Search [existing issues](https://github.com/frankea/Whisky/issues?q=is%3Aissue+label%3Agame-compatibility).
+        - Open the **Game Configurations** browser inside OpenBottle — your game may already have a recommended config.
+        - Search [existing issues](https://github.com/EwoudVV/OpenBottle/issues?q=is%3Aissue+label%3Agame-compatibility).
   - type: input
     id: game-name
     attributes:
@@ -77,14 +77,14 @@ body:
     attributes:
       label: Wine log (relevant excerpt)
       description: |
-        Press **⌘L** in Whisky to open the most recent Wine log. Paste the parts around the crash / error.
+        Press **⌘L** in OpenBottle to open the most recent Wine log. Paste the parts around the crash / error.
       render: bash
     validations:
       required: false
   - type: input
-    id: whisky-version
+    id: openbottle-version
     attributes:
-      label: Whisky version
+      label: OpenBottle version
       placeholder: "e.g., 3.0.1"
     validations:
       required: true
@@ -124,7 +124,7 @@ body:
       options:
         - label: I checked the in-app Game Configurations browser for an existing config.
           required: true
-        - label: I'm running **this fork** (`frankea/Whisky`, confirmed via **Whisky → About**) — not the archived original that the default `brew install --cask whisky` installs.
+        - label: I'm running OpenBottle (`EwoudVV/OpenBottle`, confirmed via **OpenBottle → About OpenBottle**).
           required: true
         - label: I searched existing issues for this game.
           required: true

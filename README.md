@@ -15,8 +15,8 @@ to reproduce.
 
 checked 6 september 2026. the first proof is complete: one real game has a
 repeatable sharp configuration, a protected local save, and a reversible launch.
-the app still uses the Whisky name and bundle identifiers internally while the
-product boundary is being established.
+OpenBottle now has its own app, command, URL scheme, storage, update endpoints,
+and explicit copy-based migration from existing Whisky bottles.
 
 the first target is [Screw Drivers](https://store.steampowered.com/app/1279510/Screw_Drivers/)
 on an M1 Max MacBook Pro. full-resolution rendering was too slow and the lower
@@ -58,8 +58,8 @@ the next milestone is the product rather than another Screw Drivers tweak:
 1. send every game, installer, shortcut, and store through one safe Play
    transaction;
 2. add automatic local save restore points and an explicit cloud policy;
-3. give the fork its own OpenBottle identity without touching existing Whisky
-   bottles;
+3. keep OpenBottle separate from Whisky and only copy an old bottle when its
+   owner asks;
 4. keep versioned runtime slots and select hardware-aware profiles;
 5. test different engines, Direct3D generations, launchers, input, audio, video,
    and failure classes;
@@ -84,14 +84,15 @@ fixes back when they fit there.
 
 ## build
 
-the current app target is still named Whisky. open `Whisky.xcodeproj` in Xcode to
-build the app. with a full Xcode toolchain, run the core test suite with:
+open `OpenBottle.xcodeproj` in Xcode and build the `OpenBottle` scheme. with a
+full Xcode toolchain, run the core test suite with:
 
 ```sh
 swift test --package-path WhiskyKit
 ```
 
-there is no OpenBottle release yet.
+preview builds are published as GitHub prereleases while the signing and wider
+game matrix are still in progress.
 
 ## license
 

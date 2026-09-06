@@ -19,14 +19,10 @@
 import Foundation
 import os.log
 
-/// Discovery of bottles created by the archived original Whisky app
-/// (bundle identifier `com.isaacmarovitz.Whisky`) so this fork can import them.
+/// Read-only discovery of bottles created by existing Whisky installations.
 ///
-/// The fork uses a different bundle identifier, so it doesn't see the original app's
-/// bottles automatically. It is not sandboxed, though, so it can read the original
-/// container directly. Discovered bottles are referenced **in place** (no copy) —
-/// the same way custom-path bottles already work — so importing is non-destructive
-/// and the original app keeps working if it's still installed.
+/// Discovery never constructs a ``Bottle`` or writes to the source. ``BottleImporter``
+/// performs the separate verified copy when the user chooses to import one.
 public enum LegacyBottleImport {
     private static let logger = Logger(
         subsystem: Bundle.whiskyBundleIdentifier,
@@ -35,6 +31,28 @@ public enum LegacyBottleImport {
 
     /// Bundle identifier of the archived original Whisky app.
     public static let legacyBundleIdentifier = "com.isaacmarovitz.Whisky"
+
+    public struct Source: Equatable, Sendable {
+        public let bundleIdentifier: String
+        public let containerDirectory: URL
+
+        public init(bundleIdentifier: String, containerDirectory: URL) {
+            self.bundleIdentifier = bundleIdentifier
+            self.containerDirectory = containerDirectory
+        }
+    }
+
+    /// Every known Whisky container, ordered with the user's current fork first.
+    public static var sources: [Source] {
+        ProductIdentity.legacyBundleIdentifiers.map { bundleIdentifier in
+            Source(
+                bundleIdentifier: bundleIdentifier,
+                containerDirectory: FileManager.default.homeDirectoryForCurrentUser
+                    .appending(path: "Library/Containers")
+                    .appending(path: bundleIdentifier)
+            )
+        }
+    }
 
     /// `~/Library/Containers/com.isaacmarovitz.Whisky`.
     public static var legacyContainerDirectory: URL {
@@ -110,8 +128,16 @@ public enum LegacyBottleImport {
         public let url: URL
         /// The bottle's display name, read from its settings (falls back to the directory name).
         public let name: String
+        /// The Whisky installation that owns the untouched source bottle.
+        public let sourceBundleIdentifier: String
         public var id: URL {
             url
+        }
+
+        public init(url: URL, name: String, sourceBundleIdentifier: String) {
+            self.url = url
+            self.name = name
+            self.sourceBundleIdentifier = sourceBundleIdentifier
         }
     }
 
@@ -123,7 +149,44 @@ public enum LegacyBottleImport {
         existingPaths: [URL]
     ) -> [DiscoveredBottle] {
         importableBottleURLs(legacyContainer: legacyContainer, existingPaths: existingPaths).map { url in
-            DiscoveredBottle(url: url, name: readOnlyName(at: url) ?? url.lastPathComponent)
+            DiscoveredBottle(
+                url: url,
+                name: readOnlyName(at: url) ?? url.lastPathComponent,
+                sourceBundleIdentifier: legacyContainer.lastPathComponent
+            )
+        }
+    }
+
+    /// Discovers bottles from every known Whisky installation without opening them as `Bottle` objects.
+    public static func allImportableBottles(existingPaths: [URL]) -> [DiscoveredBottle] {
+        allImportableBottles(sources: sources, existingPaths: existingPaths)
+    }
+
+    /// Injectable source list for migration tests and future Whisky variants.
+    public static func allImportableBottles(
+        sources: [Source],
+        existingPaths: [URL]
+    ) -> [DiscoveredBottle] {
+        var seen = Set<URL>()
+        var bottles: [DiscoveredBottle] = []
+        for source in sources where legacyContainerExists(at: source.containerDirectory) {
+            let found = importableBottleURLs(
+                legacyContainer: source.containerDirectory,
+                existingPaths: existingPaths
+            )
+            for url in found where seen.insert(url.standardizedFileURL).inserted {
+                bottles.append(DiscoveredBottle(
+                    url: url,
+                    name: readOnlyName(at: url) ?? url.lastPathComponent,
+                    sourceBundleIdentifier: source.bundleIdentifier
+                ))
+            }
+        }
+        return bottles.sorted {
+            if $0.name != $1.name {
+                return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+            return $0.url.path < $1.url.path
         }
     }
 

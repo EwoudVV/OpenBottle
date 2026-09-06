@@ -30,7 +30,7 @@ public final class AudioDeviceMonitor: @unchecked Sendable {
     public typealias DeviceChangeHandler = @Sendable (AudioDeviceChangeEvent) -> Void
 
     private let logger = Logger(
-        subsystem: "com.franke.Whisky",
+        subsystem: "io.github.ewoudvv.OpenBottle",
         category: "AudioDeviceMonitor"
     )
 

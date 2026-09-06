@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "6EFDF6492AAE2DA800EF622F"
-               BuildableName = "WhiskyThumbnail.appex"
-               BlueprintName = "WhiskyThumbnail"
-               ReferencedContainer = "container:Whisky.xcodeproj">
+               BuildableName = "OpenBottleThumbnail.appex"
+               BlueprintName = "OpenBottleThumbnail"
+               ReferencedContainer = "container:OpenBottle.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -29,9 +29,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "6E40495129CCA19C006E3F1B"
-               BuildableName = "Whisky.app"
-               BlueprintName = "Whisky"
-               ReferencedContainer = "container:Whisky.xcodeproj">
+               BuildableName = "OpenBottle.app"
+               BlueprintName = "OpenBottle"
+               ReferencedContainer = "container:OpenBottle.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -60,9 +60,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "6E40495129CCA19C006E3F1B"
-            BuildableName = "Whisky.app"
-            BlueprintName = "Whisky"
-            ReferencedContainer = "container:Whisky.xcodeproj">
+            BuildableName = "OpenBottle.app"
+            BlueprintName = "OpenBottle"
+            ReferencedContainer = "container:OpenBottle.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -79,9 +79,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "6E40495129CCA19C006E3F1B"
-            BuildableName = "Whisky.app"
-            BlueprintName = "Whisky"
-            ReferencedContainer = "container:Whisky.xcodeproj">
+            BuildableName = "OpenBottle.app"
+            BlueprintName = "OpenBottle"
+            ReferencedContainer = "container:OpenBottle.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

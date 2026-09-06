@@ -206,7 +206,7 @@ final class BottleOperationsExportTests: BottleOperationsTestCase {
             XCTFail("expected export to throw for an unregistered bottle")
         } catch {
             let nsError = error as NSError
-            XCTAssertEqual(nsError.domain, "com.franke.Whisky")
+            XCTAssertEqual(nsError.domain, "io.github.ewoudvv.OpenBottle")
             XCTAssertEqual(nsError.code, 1)
         }
     }
@@ -323,7 +323,7 @@ final class BottleOperationsDuplicateTests: BottleOperationsTestCase {
             XCTFail("expected duplicate to throw for an unregistered bottle")
         } catch {
             let nsError = error as NSError
-            XCTAssertEqual(nsError.domain, "com.franke.Whisky")
+            XCTAssertEqual(nsError.domain, "io.github.ewoudvv.OpenBottle")
             XCTAssertEqual(nsError.code, 1)
         }
     }

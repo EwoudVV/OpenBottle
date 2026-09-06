@@ -92,7 +92,7 @@ public final class TroubleshootingFlowEngine: ObservableObject {
     private let sessionStore: any TroubleshootingSessionStoring
 
     private let logger = Logger(
-        subsystem: "com.franke.Whisky",
+        subsystem: "io.github.ewoudvv.OpenBottle",
         category: "TroubleshootingFlowEngine"
     )
 

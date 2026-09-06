@@ -1,6 +1,6 @@
 //
-//  WhiskyUITestsGameDB.swift
-//  WhiskyUITests
+//  OpenBottleUITestsGameDB.swift
+//  OpenBottleUITests
 //
 //  This file is part of Whisky.
 //
@@ -19,7 +19,7 @@
 import XCTest
 
 /// The GameDB browser, split out to keep each file readable.
-final class WhiskyUITestsGameDB: WhiskyUITestCase {
+final class OpenBottleUITestsGameDB: OpenBottleUITestCase {
     func testGameDBBrowserShowsEntries() throws {
         try requireBottleFixture()
         openGameConfigurations()

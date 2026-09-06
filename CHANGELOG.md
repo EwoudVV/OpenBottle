@@ -46,9 +46,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in dependency-history.plist alongside the exit code, so the reason for a
   failure (such as a vc_redist checksum mismatch) is on disk next to the
   attempt instead of lost with the process (#233).
-- Ways into a game from outside the window. A whisky:// URL scheme launches a
-  Steam game (whisky://launch?steam=<appid>) or a pinned program
-  (whisky://launch?pin=<name>), optionally scoped to a bottle. Only games
+- Ways into a game from outside the window. A openbottle:// URL scheme launches a
+  Steam game (openbottle://launch?steam=<appid>) or a pinned program
+  (openbottle://launch?pin=<name>), optionally scoped to a bottle. Only games
   installed in one of your bottles and pins that exist resolve; anything
   else is refused before Steam is involved. A URL arrival names what it is
   about to launch and asks first, with a per-target "always allow" so the
@@ -143,7 +143,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   separate optional; it is presented from the engine itself now.
 - The bottle's Terminal button works for bottles whose name contains a space.
   The name was backslash-escaped inside double quotes, so the shell passed
-  the backslashes through and WhiskyCmd reported that no such bottle exists.
+  the backslashes through and OpenBottleCmd reported that no such bottle exists.
 - Guided troubleshooting no longer dead-ends on a findings card. Info steps
   such as "Missing dependencies found" only carry a Continue transition, and
   nothing followed it; the wizard now shows a Continue button there, and Skip
@@ -208,7 +208,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   key as a title instead of "Couldn't launch <name>". The key was looked up
   with the program name baked in, so it never matched the catalog entry; the
   name is now substituted into the translated string. The same alert serves
-  Dock menu and whisky:// launches, so it would have shown far more often.
+  Dock menu and openbottle:// launches, so it would have shown far more often.
 - Games that check the graphics driver version can start. D3DMetal answers the
   DXGI query with success and a version of -1, which reads back as
   65535.65535.65535.65535 and fails every minimum-driver check: Helldivers 2 put
@@ -685,7 +685,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Diagnostic reports (WhiskyWine setup and Wine prefix) now link to this fork's issue tracker
   (`frankea/Whisky`) instead of the archived upstream, so reports reach a maintained repo. Internal
   Logger subsystems and notification names also moved off the archived `com.isaacmarovitz.Whisky`
-  namespace onto `com.franke.Whisky`.
+  namespace onto `io.github.ewoudvv.OpenBottle`.
 - Bundled GameDB grows by 4 more entries from the third-pass retriage:
   DJMAX RESPECT V (Korean fonts + DXVK), They Are Billions (vcrun + DXVK),
   SpellForce 3 (corefonts + d3dcompiler), Fallout 4 (Sequoia compat + xact)
@@ -811,7 +811,7 @@ to 15 (Sequoia).
 ### Fixed
 - Fixed Terminal launch (shift-click) producing malformed commands due to double-escaping (Issue #71)
 - Fixed localization fallback showing raw keys to non-English users (Refs #49)
-- Fixed WhiskyCmd `run` command not launching programs (now uses Wine directly) (Refs #49, upstream #1088, #1140)
+- Fixed OpenBottleCmd `run` command not launching programs (now uses Wine directly) (Refs #49, upstream #1088, #1140)
 - Corrected Dependabot Swift configuration
 - Capped Wine process logs and pruned old logs to prevent excessive disk usage (Issue #46)
 - Surface bottle creation failures with diagnostic information (Issue #61)

@@ -1,7 +1,7 @@
 // swiftlint:disable file_length
 //
 //  Main.swift
-//  WhiskyCmd
+//  OpenBottleCmd
 //
 //  This file is part of Whisky.
 //
@@ -39,9 +39,10 @@ struct DomainError: LocalizedError {
 }
 
 @main
-struct Whisky: AsyncParsableCommand {
+struct OpenBottle: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "A CLI interface for Whisky.",
+        commandName: ProductIdentity.commandName,
+        abstract: "A CLI interface for OpenBottle.",
         discussion: """
         Exit codes: 64 for a malformed invocation (unknown flags, missing or \
         empty arguments; printed with usage), 1 for a well-formed command \
@@ -67,7 +68,7 @@ struct Whisky: AsyncParsableCommand {
     )
 }
 
-extension Whisky {
+extension OpenBottle {
     struct List: AsyncParsableCommand {
         static let configuration = CommandConfiguration(abstract: "List existing bottles.")
 
@@ -120,7 +121,7 @@ extension Whisky {
                 bottle.settings.wineVersion = SemanticVersion(0, 0, 0)
 
                 bottlesList.paths.append(bottleURL)
-                print("Created bottle \"\(trimmed)\". Open Whisky to bootstrap the Wine prefix.")
+                print("Created bottle \"\(trimmed)\". Open OpenBottle to bootstrap the Wine prefix.")
             } catch {
                 throw DomainError("\(error)")
             }
@@ -179,7 +180,7 @@ extension Whisky {
 
     struct Remove: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
-            abstract: "Remove an existing bottle from Whisky.",
+            abstract: "Remove an existing bottle from OpenBottle.",
             discussion: "This will not remove the bottle from disk."
         )
 
@@ -202,7 +203,7 @@ extension Whisky {
 
     struct Run: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
-            abstract: "Run a program with Whisky.",
+            abstract: "Run a program with OpenBottle.",
             discussion: """
             Runs a Windows program directly using Wine. Use --command to print \
             the command instead. Use --follow to stream program output to the \
@@ -211,7 +212,7 @@ extension Whisky {
             Options the program itself takes (for example --disable-gpu) are \
             passed through as written. If a program option has the same name \
             as one of run's own options, put it after a bare -- separator: \
-            whisky run MyBottle app.exe -- --follow
+            openbottle run MyBottle app.exe -- --follow
             """
         )
 
@@ -487,21 +488,21 @@ extension Whisky {
     }
 
     struct Install: ParsableCommand {
-        static let configuration = CommandConfiguration(abstract: "Install WhiskyWine.")
+        static let configuration = CommandConfiguration(abstract: "Install the OpenBottle Runtime.")
 
         mutating func run() throws {}
     }
 
     struct Uninstall: ParsableCommand {
-        static let configuration = CommandConfiguration(abstract: "Uninstall WhiskyWine.")
+        static let configuration = CommandConfiguration(abstract: "Uninstall the OpenBottle Runtime.")
 
-        @Flag(name: [.long, .short], help: "Uninstall WhiskyWine") var whiskyWine = false
+        @Flag(name: [.long, .short], help: "Uninstall the OpenBottle Runtime") var whiskyWine = false
 
         mutating func run() throws {}
     }
 }
 
-extension Whisky {
+extension OpenBottle {
     struct Games: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             abstract: "List Steam games installed in a bottle."

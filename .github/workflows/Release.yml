@@ -12,15 +12,10 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     steps:
-      # The official Homebrew cask `whisky` tracks the original (archived) Whisky
-      # project and is not controlled by this fork, so it is not bumped here. This
-      # fork's Homebrew distribution is the frankea/homebrew-whisky tap, updated by
-      # the UpdateHomebrewTap workflow (see docs/ReleaseWorkflow.md for BREW_TOKEN).
-
       - name: Release Info
         env:
           TAG_NAME: ${{ github.event.release.tag_name }}
         run: |
           echo "Release $TAG_NAME published"
-          echo "Distribution: GitHub Releases and the frankea/homebrew-whisky tap"
-          echo "Download: https://github.com/frankea/Whisky/releases"
+          echo "Distribution: OpenBottle GitHub Releases"
+          echo "Download: https://github.com/EwoudVV/OpenBottle/releases"

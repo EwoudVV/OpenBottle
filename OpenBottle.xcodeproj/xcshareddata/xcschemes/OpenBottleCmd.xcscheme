@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "6E70A4972A9A2197007799E9"
-               BuildableName = "WhiskyCmd"
-               BlueprintName = "WhiskyCmd"
-               ReferencedContainer = "container:Whisky.xcodeproj">
+               BuildableName = "OpenBottleCmd"
+               BlueprintName = "OpenBottleCmd"
+               ReferencedContainer = "container:OpenBottle.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "6E70A4972A9A2197007799E9"
-            BuildableName = "WhiskyCmd"
-            BlueprintName = "WhiskyCmd"
-            ReferencedContainer = "container:Whisky.xcodeproj">
+            BuildableName = "OpenBottleCmd"
+            BlueprintName = "OpenBottleCmd"
+            ReferencedContainer = "container:OpenBottle.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
@@ -68,9 +68,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "6E70A4972A9A2197007799E9"
-            BuildableName = "WhiskyCmd"
-            BlueprintName = "WhiskyCmd"
-            ReferencedContainer = "container:Whisky.xcodeproj">
+            BuildableName = "OpenBottleCmd"
+            BlueprintName = "OpenBottleCmd"
+            ReferencedContainer = "container:OpenBottle.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

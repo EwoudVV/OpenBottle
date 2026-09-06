@@ -25,7 +25,7 @@ import XCTest
 
 // MARK: - Malformed PE Hardening
 
-/// PE files are untrusted input (WhiskyThumbnail parses them automatically), so
+/// PE files are untrusted input (OpenBottleThumbnail parses them automatically), so
 /// crafted headers must never trap or hang the parser.
 final class MalformedPEHardeningTests: XCTestCase {
     var tempDir: URL!

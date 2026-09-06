@@ -131,7 +131,7 @@ extension WhiskyWineDownloadView {
                 .buttonStyle(.bordered)
 
                 Button("open.logs") {
-                    WhiskyApp.openLogsFolder()
+                    OpenBottleApp.openLogsFolder()
                 }
                 .buttonStyle(.bordered)
             }

@@ -19,14 +19,21 @@
 import Foundation
 
 public enum DistributionConfig {
-    /// Base URL for GitHub Pages distribution
-    public static let baseURL = "https://frankea.github.io/Whisky"
+    /// Base URL for OpenBottle-owned GitHub Pages distribution.
+    public static let baseURL = "https://ewoudvv.github.io/OpenBottle"
 
-    /// URL for the WhiskyWine version plist file
-    public static let versionPlistURL = "\(baseURL)/WhiskyWineVersion.plist"
+    /// The declared upstream source for the open Wine runtime used by the alpha.
+    public static let runtimeBaseURL = "https://frankea.github.io/Whisky"
+    public static let runtimeReleasesBaseURL = "https://github.com/frankea/Whisky/releases/download"
 
-    /// Base URL for GitHub Releases downloads
-    public static let releasesBaseURL = "https://github.com/frankea/Whisky/releases/download"
+    /// URL for the runtime version manifest.
+    public static let versionPlistURL = "\(runtimeBaseURL)/WhiskyWineVersion.plist"
+
+    /// Base URL for future OpenBottle app releases.
+    public static let releasesBaseURL = "https://github.com/EwoudVV/OpenBottle/releases/download"
+
+    /// App updates stay off until OpenBottle has its own signing key and signed release.
+    public static let appUpdatesEnabled = false
 
     /// URL for the Sparkle appcast feed
     public static let appcastURL = "\(baseURL)/appcast.xml"
@@ -35,6 +42,6 @@ public enum DistributionConfig {
     /// - Parameter version: The version string (e.g., "2.5.0")
     /// - Returns: The full URL to download Libraries.tar.gz from GitHub Releases
     public static func librariesURL(version: String) -> String {
-        "\(releasesBaseURL)/v\(version)/Libraries.tar.gz"
+        "\(runtimeReleasesBaseURL)/v\(version)/Libraries.tar.gz"
     }
 }

@@ -1,6 +1,6 @@
 // swiftlint:disable file_length
 //
-//  WhiskyApp.swift
+//  OpenBottleApp.swift
 //  Whisky
 //
 //  This file is part of Whisky.
@@ -22,17 +22,20 @@ import Sparkle
 import SwiftUI
 import WhiskyKit
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.franke.Whisky", category: "WhiskyApp")
+private let logger = Logger(
+    subsystem: Bundle.main.bundleIdentifier ?? ProductIdentity.appBundleIdentifier,
+    category: "OpenBottleApp"
+)
 
 @main
 // swiftlint:disable:next type_body_length
-struct WhiskyApp: App {
-    /// True when launched by the UI test harness (the `-WhiskyUITestMode` launch
-    /// argument set in `WhiskyUITests`). UI tests run without a Wine runtime
+struct OpenBottleApp: App {
+    /// True when launched by the UI test harness (the `-OpenBottleUITestMode` launch
+    /// argument set in `OpenBottleUITests`). UI tests run without a Wine runtime
     /// installed, which would otherwise auto-present the first-launch setup sheet
     /// over the main window and race every toolbar interaction; this lets that
     /// auto-presentation (and the update check) be skipped in tests.
-    static let isUITesting = ProcessInfo.processInfo.arguments.contains("-WhiskyUITestMode")
+    static let isUITesting = ProcessInfo.processInfo.arguments.contains("-OpenBottleUITestMode")
 
     /// Scene id for the main window, used to reopen it from the menu-bar extra.
     static let mainWindowID = "main"
@@ -60,7 +63,7 @@ struct WhiskyApp: App {
 
     init() {
         updaterController = SPUStandardUpdaterController(
-            startingUpdater: true,
+            startingUpdater: DistributionConfig.appUpdatesEnabled,
             updaterDelegate: nil,
             userDriverDelegate: SparkleUpdaterDelegate.shared
         )
@@ -106,7 +109,7 @@ struct WhiskyApp: App {
                 .onAppear {
                     NSWindow.allowsAutomaticWindowTabbing = false
                     Task.detached {
-                        await WhiskyApp.deleteOldLogs()
+                        await OpenBottleApp.deleteOldLogs()
                     }
                     installMetalFXBridgeIfNeeded()
                     installVideoProcessorIfNeeded()
@@ -169,7 +172,9 @@ struct WhiskyApp: App {
         .handlesExternalEvents(matching: ["*"])
         .commands {
             CommandGroup(after: .appInfo) {
-                SparkleView(updater: updaterController.updater)
+                if DistributionConfig.appUpdatesEnabled {
+                    SparkleView(updater: updaterController.updater)
+                }
             }
             CommandGroup(before: .systemServices) {
                 Divider()
@@ -178,7 +183,7 @@ struct WhiskyApp: App {
                 }
                 Button("install.cli") {
                     Task {
-                        await WhiskyCmd.install()
+                        await OpenBottleCmd.install()
                     }
                 }
             }
@@ -203,32 +208,32 @@ struct WhiskyApp: App {
                     }
                 }
                 .keyboardShortcut("I", modifiers: [.command])
-                Button("Migrate from the Original Whisky…") {
+                Button("Import from Whisky…") {
                     showMigrate = true
                 }
             }
             CommandGroup(after: .importExport) {
                 Button("open.logs") {
-                    WhiskyApp.openLogsFolder()
+                    OpenBottleApp.openLogsFolder()
                 }
                 .keyboardShortcut("L", modifiers: [.command])
                 Button("kill.bottles") {
-                    WhiskyApp.killBottles()
+                    OpenBottleApp.killBottles()
                 }
                 .keyboardShortcut("K", modifiers: [.command, .shift])
                 Button("wine.clearShaderCaches") {
-                    WhiskyApp.killBottles() // Better not make things more complicated for ourselves
-                    WhiskyApp.wipeShaderCaches()
+                    OpenBottleApp.killBottles() // Better not make things more complicated for ourselves
+                    OpenBottleApp.wipeShaderCaches()
                 }
             }
             CommandGroup(replacing: .help) {
                 Button("help.github") {
-                    if let url = URL(string: "https://github.com/frankea/Whisky") {
+                    if let url = ProductIdentity.repositoryURL {
                         openURL(url)
                     }
                 }
                 Button("help.issues") {
-                    if let url = URL(string: "https://github.com/frankea/Whisky/issues") {
+                    if let url = ProductIdentity.issuesURL {
                         openURL(url)
                     }
                 }
@@ -246,7 +251,7 @@ struct WhiskyApp: App {
         Settings {
             SettingsView()
         }
-        MenuBarExtra("Whisky", systemImage: "wineglass", isInserted: $showMenuBarExtra) {
+        MenuBarExtra(ProductIdentity.name, systemImage: "shippingbox", isInserted: $showMenuBarExtra) {
             WhiskyMenuBarView()
                 .environmentObject(BottleVM.shared)
         }
@@ -394,9 +399,9 @@ struct WhiskyApp: App {
     }
 }
 
-// MARK: - WhiskyApp Utility Methods
+// MARK: - OpenBottleApp Utility Methods
 
-extension WhiskyApp {
+extension OpenBottleApp {
     @MainActor
     static func killBottles() {
         for bottle in BottleVM.shared.bottles {

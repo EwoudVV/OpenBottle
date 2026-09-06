@@ -1,6 +1,6 @@
 //
 //  ThumbnailProvider.swift
-//  WhiskyThumbnail
+//  OpenBottleThumbnail
 //
 //  This file is part of Whisky.
 //
@@ -33,7 +33,7 @@ class ThumbnailProvider: QLThumbnailProvider {
 
         // % of thumbnail occupied by icon
         let iconScaleFactor = 0.9
-        let whiskyIconScaleFactor = 0.4
+        let openBottleIconScaleFactor = 0.4
 
         // AppKit coordinate system origin is in the bottom-left
         // Icon is centered
@@ -44,12 +44,12 @@ class ThumbnailProvider: QLThumbnailProvider {
             height: request.maximumSize.height * iconScaleFactor
         )
 
-        // Whisky icon is aligned bottom-right
-        let whiskyIconFrame = CGRect(
-            x: request.maximumSize.width - request.maximumSize.width * whiskyIconScaleFactor,
+        // OpenBottle icon is aligned bottom-right
+        let openBottleIconFrame = CGRect(
+            x: request.maximumSize.width - request.maximumSize.width * openBottleIconScaleFactor,
             y: 0,
-            width: request.maximumSize.width * whiskyIconScaleFactor,
-            height: request.maximumSize.height * whiskyIconScaleFactor
+            width: request.maximumSize.width * openBottleIconScaleFactor,
+            height: request.maximumSize.height * openBottleIconScaleFactor
         )
         do {
             var image: NSImage?
@@ -60,8 +60,8 @@ class ThumbnailProvider: QLThumbnailProvider {
             let reply = QLThumbnailReply(contextSize: thumbnailSize) { () -> Bool in
                 if let image {
                     image.draw(in: iconFrame)
-                    let whiskyIcon = NSImage(named: NSImage.Name("Icon"))
-                    whiskyIcon?.draw(in: whiskyIconFrame, from: .zero, operation: .sourceOver, fraction: 1)
+                    let openBottleIcon = NSImage(named: NSImage.Name("Icon"))
+                    openBottleIcon?.draw(in: openBottleIconFrame, from: .zero, operation: .sourceOver, fraction: 1)
                     return true
                 }
 

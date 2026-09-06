@@ -1,16 +1,16 @@
 # How to Contribute
 
-Thanks for your interest! First, make a fork of Whisky, create a new branch for your changes, and get coding!
+Thanks for your interest! First, make a fork of OpenBottle, create a new branch for your changes, and get coding!
 
 ## Build Environment
 
-Whisky is built using **Xcode 16** on **macOS Sequoia 15.0** or later. All external dependencies are handled through the Swift Package Manager.
+OpenBottle is built using **Xcode 16** on **macOS Sequoia 15.0** or later. All external dependencies are handled through the Swift Package Manager.
 
 ## Code Style
 
 ### Linting with SwiftLint
 
-Every Whisky commit is automatically linted using SwiftLint. You can run these checks locally by building in Xcode; violations will appear as errors or warnings. For your pull request to be merged, you must meet all requirements outlined by SwiftLint and have no violations.
+Every OpenBottle commit is automatically linted using SwiftLint. You can run these checks locally by building in Xcode; violations will appear as errors or warnings. For your pull request to be merged, you must meet all requirements outlined by SwiftLint and have no violations.
 
 ### Formatting with SwiftFormat
 
@@ -133,7 +133,7 @@ through a coordinated rewrite.
 
 ### Running Tests
 
-Whisky has two test layers:
+OpenBottle has two test layers:
 
 **WhiskyKit unit tests** — the framework's pure-Swift logic, runnable
 without launching the app:
@@ -142,21 +142,21 @@ without launching the app:
 swift test --package-path WhiskyKit
 ```
 
-**WhiskyUITests** — XCUITest end-to-end coverage of the SwiftUI surface,
+**OpenBottleUITests** — XCUITest end-to-end coverage of the SwiftUI surface,
 runnable from Xcode or via `xcodebuild`:
 
 ```bash
-xcodebuild -project Whisky.xcodeproj \
-  -scheme Whisky \
+xcodebuild -project OpenBottle.xcodeproj \
+  -scheme OpenBottle \
   -destination 'platform=macOS' \
-  -only-testing:WhiskyUITests test
+  -only-testing:OpenBottleUITests test
 ```
 
 Tests that need bottle fixtures call `requireBottleFixture()`, which
 `XCTSkip`s them when the user container has no bottles (always true on a
 fresh CI runner). The fixture-free tests — the create-bottle sheet flow
 and toolbar checks — run for real on every CI run. To exercise the
-fixture-dependent tests locally, create at least one bottle in Whisky
+fixture-dependent tests locally, create at least one bottle in OpenBottle
 before running the suite.
 
 All tests must pass before your PR can be merged.
@@ -180,13 +180,13 @@ Before submitting a PR, verify no regressions:
 # Run full test suite
 swift test --package-path WhiskyKit
 
-# Build Whisky app
-xcodebuild -scheme Whisky -configuration Debug build
+# Build OpenBottle app
+xcodebuild -project OpenBottle.xcodeproj -scheme OpenBottle -configuration Debug build
 
 # Run UI tests (skip-aware on fresh containers)
-xcodebuild -project Whisky.xcodeproj -scheme Whisky \
+xcodebuild -project OpenBottle.xcodeproj -scheme OpenBottle \
   -destination 'platform=macOS' \
-  -only-testing:WhiskyUITests test
+  -only-testing:OpenBottleUITests test
 
 # Check formatting
 swiftformat --lint .
@@ -199,10 +199,10 @@ Once your pull request passes CI checks (SwiftLint, SwiftFormat, and builds), it
 ### Review Checklist
 
 - [ ] All tests pass (`swift test --package-path WhiskyKit`)
-- [ ] Build succeeds (`xcodebuild -scheme Whisky build`)
+- [ ] Build succeeds (`xcodebuild -project OpenBottle.xcodeproj -scheme OpenBottle build`)
 - [ ] SwiftFormat clean (`swiftformat --lint .`)
 - [ ] SwiftLint clean (build shows no violations)
 - [ ] Documentation updated (if adding features)
 - [ ] Changelog updated (if user-facing changes)
 
-Thank you for contributing to Whisky!
+Thank you for contributing to OpenBottle!
