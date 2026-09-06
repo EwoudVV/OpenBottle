@@ -33,6 +33,8 @@ enum LibraryEntryState: Equatable {
     case launching
     /// It has a process of its own in ``ProcessRegistry``.
     case running
+    /// A verified local snapshot is replacing the current save.
+    case restoring
 }
 
 /// One library entry, coloured by its own icon.
@@ -183,12 +185,12 @@ struct LibraryCard: View {
     @ViewBuilder
     private var statusView: some View {
         switch state {
-        case .launching:
+        case .launching, .restoring:
             ProgressView()
                 .controlSize(.small)
                 .frame(width: 30, height: 30)
                 .cardGlass(.circle)
-                .help("library.card.launching")
+                .help(state == .restoring ? "library.saves.restoring" : "library.card.launching")
         case .running:
             Label("library.card.running", systemImage: "circle.fill")
                 .labelStyle(.titleAndIcon)

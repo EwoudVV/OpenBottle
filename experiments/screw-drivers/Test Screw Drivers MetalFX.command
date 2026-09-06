@@ -84,6 +84,7 @@ explorer_settings="$bottle/Program Settings/explorer-$explorer_hash.plist"
 explorer_history="$bottle/Program Settings/explorer.exe.run-history.plist"
 separate_save="$bottle/drive_c/windows/saveables.dat"
 active_save="$game_root/saveables.dat"
+game_process='C:\Program Files (x86)\Steam\steamapps\common\Screw Drivers\Screw Drivers.exe'
 
 steam_shared_configs=()
 while IFS= read -r shared_config; do
@@ -132,6 +133,15 @@ steam_cloud_is_disabled() {
     ' "$steam_shared_config"
 }
 
+game_is_running() {
+    while IFS= read -r command; do
+        if [[ "$command" == *"$game_process"* ]]; then
+            return 0
+        fi
+    done < <(/bin/ps -Ao command=)
+    return 1
+}
+
 dll_names=(d3d11.dll dxgi.dll d3d10core.dll winemetal.dll)
 dll_dirs=(system32 syswow64)
 for dll_dir in "${dll_dirs[@]}"; do
@@ -147,6 +157,10 @@ for dll_dir in "${dll_dirs[@]}"; do
 done
 
 if [[ "$action" == "check" ]]; then
+    if game_is_running; then
+        echo "Screw Drivers is already running." >&2
+        exit 1
+    fi
     echo "Screw Drivers MetalFX test is ready."
     echo "Bottle: $bottle_name"
     echo "Bottle path: $bottle"
@@ -180,7 +194,7 @@ if [[ -f "$separate_save" ]]; then
     exit 1
 fi
 
-if pgrep -f "$bottle" >/dev/null 2>&1; then
+if game_is_running; then
     echo "The $bottle_name bottle is already running. Close it before starting the test." >&2
     exit 1
 fi
@@ -219,12 +233,7 @@ hash_state() {
 
 kill_bottle() {
     WINEPREFIX="$bottle" "$wineserver" -k >/dev/null 2>&1 || true
-    for _ in 1 2 3 4 5; do
-        if ! pgrep -f "$bottle" >/dev/null 2>&1; then
-            return
-        fi
-        sleep 1
-    done
+    WINEPREFIX="$bottle" "$wineserver" -w >/dev/null 2>&1 || true
 }
 
 restore_original() {

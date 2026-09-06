@@ -35,17 +35,20 @@ public struct SteamLaunchSafetyController: Sendable {
     private let journal: LaunchTransactionJournal
     private let entries: [GameDBEntry]
     private let wineUserName: String?
+    private let maximumSnapshots: Int
 
     public init(
         vault: SaveVault,
         journal: LaunchTransactionJournal,
         entries: [GameDBEntry] = GameDBLoader.loadDefaults(),
-        wineUserName: String? = nil
+        wineUserName: String? = nil,
+        maximumSnapshots: Int = SaveVault.defaultMaximumSnapshots
     ) {
         self.vault = vault
         self.journal = journal
         self.entries = entries
         self.wineUserName = wineUserName
+        self.maximumSnapshots = max(1, maximumSnapshots)
     }
 
     /// Opens a journal record and captures every known save source before Steam starts.
@@ -55,8 +58,13 @@ public struct SteamLaunchSafetyController: Sendable {
         identifier: UUID = UUID(),
         at date: Date = Date()
     ) async throws -> SteamLaunchPreparation {
-        let entry = entries.first { $0.steamAppId == game.appId }
-        let gameID = entry?.id ?? "steam-\(game.appId)"
+        let plan = try SteamGameSavePlanner.resolve(
+            game: game,
+            bottleURL: bottleURL,
+            entries: entries,
+            wineUserName: wineUserName
+        )
+        let gameID = plan.gameID
         let bottleID = BottleLaunchIdentity.id(for: bottleURL)
         _ = try await journal.begin(
             bottleID: bottleID,
@@ -67,25 +75,15 @@ public struct SteamLaunchSafetyController: Sendable {
 
         do {
             _ = try await journal.advance(identifier, to: .preflightPassed, at: date)
-            let locations = entry?.saveLocations ?? []
-            guard !locations.isEmpty else {
+            guard !plan.sources.isEmpty else {
                 return SteamLaunchPreparation(transactionID: identifier, saveSnapshot: nil)
             }
-
-            let sources = try GameSaveResolver.resolve(
-                locations,
-                context: GameSaveContext(
-                    bottleURL: bottleURL,
-                    gameInstallURL: game.installURL,
-                    wineUserName: wineUserName
-                )
-            )
             let snapshotID = identifier.uuidString.lowercased()
             let snapshot = try await Task.detached(priority: .utility) {
                 try vault.capture(
                     bottleID: bottleID,
                     gameID: gameID,
-                    sources: sources,
+                    sources: plan.sources,
                     createdAt: date,
                     identifier: snapshotID
                 )
@@ -132,7 +130,101 @@ public struct SteamLaunchSafetyController: Sendable {
     /// Closes a successful transaction after the actual game process exits.
     @discardableResult
     public func complete(_ preparation: SteamLaunchPreparation) async throws -> LaunchTransactionRecord {
-        _ = try await journal.advance(preparation.transactionID, to: .cleaningUp)
-        return try await journal.advance(preparation.transactionID, to: .completed)
+        try await finishAfterExit(preparation)
+    }
+
+    public func unfinished(bottleURL: URL) async throws -> [LaunchTransactionRecord] {
+        let bottleID = BottleLaunchIdentity.id(for: bottleURL)
+        return try await journal.unfinished().filter { $0.bottleID == bottleID }
+    }
+
+    func game(
+        for record: LaunchTransactionRecord,
+        among games: [SteamGame]
+    ) -> SteamGame? {
+        SteamGameSavePlanner.game(for: record.gameID, among: games, entries: entries)
+    }
+
+    func resumeMonitoring(
+        _ record: LaunchTransactionRecord
+    ) async throws -> SteamLaunchPreparation {
+        let current = try await journal.record(for: record.id)
+        if current.stage == .launchRequested {
+            _ = try await journal.advance(record.id, to: .monitoring)
+        }
+        return SteamLaunchPreparation(transactionID: record.id, saveSnapshot: nil)
+    }
+
+    @discardableResult
+    func finishInterrupted(
+        _ suppliedRecord: LaunchTransactionRecord
+    ) async throws -> LaunchTransactionRecord {
+        let record = try await journal.record(for: suppliedRecord.id)
+        switch record.stage {
+        case .created, .preflightPassed, .saveCaptured:
+            return try await journal.fail(record.id, code: "interrupted-before-launch")
+        case .prepared, .launchRequested:
+            return try await finishFailure(record, code: "interrupted-launch")
+        case .monitoring:
+            return try await finishSuccess(record)
+        case .recoveryNeeded:
+            return try await finishFailure(record, code: record.failureCode ?? "interrupted-launch")
+        case .cleaningUp:
+            let terminal: LaunchTransactionStage = record.failureCode == nil ? .completed : .failed
+            return try await journal.advance(record.id, to: terminal)
+        case .completed, .failed:
+            return record
+        }
+    }
+
+    @discardableResult
+    func finishAfterExit(
+        _ preparation: SteamLaunchPreparation
+    ) async throws -> LaunchTransactionRecord {
+        var record = try await journal.record(for: preparation.transactionID)
+        if record.stage == .launchRequested {
+            record = try await journal.advance(record.id, to: .monitoring)
+        }
+        switch record.stage {
+        case .monitoring:
+            return try await finishSuccess(record)
+        case .recoveryNeeded:
+            return try await finishFailure(record, code: record.failureCode ?? "launch-failed")
+        case .cleaningUp:
+            let terminal: LaunchTransactionStage = record.failureCode == nil ? .completed : .failed
+            return try await journal.advance(record.id, to: terminal)
+        default:
+            throw LaunchTransactionError.invalidTransition(from: record.stage, nextStage: .cleaningUp)
+        }
+    }
+
+    private func finishSuccess(
+        _ record: LaunchTransactionRecord
+    ) async throws -> LaunchTransactionRecord {
+        _ = try await journal.advance(record.id, to: .cleaningUp)
+        let completed = try await journal.advance(record.id, to: .completed)
+        if let snapshotID = completed.saveSnapshotID {
+            _ = try? await Task.detached(priority: .utility) {
+                try vault.enforceRetention(
+                    bottleID: completed.bottleID,
+                    gameID: completed.gameID,
+                    maximumSnapshots: maximumSnapshots,
+                    protectedSnapshotIDs: [snapshotID]
+                )
+            }.value
+        }
+        return completed
+    }
+
+    private func finishFailure(
+        _ suppliedRecord: LaunchTransactionRecord,
+        code: String
+    ) async throws -> LaunchTransactionRecord {
+        var record = suppliedRecord
+        if record.stage != .recoveryNeeded {
+            record = try await journal.fail(record.id, code: code)
+        }
+        _ = try await journal.advance(record.id, to: .cleaningUp)
+        return try await journal.advance(record.id, to: .failed)
     }
 }

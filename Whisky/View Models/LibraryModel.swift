@@ -60,7 +60,9 @@ struct LibraryRow: Identifiable {
 final class LibraryModel: ObservableObject {
     @Published private(set) var rows: [LibraryRow] = []
     @Published var launchError: String?
+    @Published var saveError: String?
     @Published var toast: ToastData?
+    @Published var restoreSheet: LibraryRestoreSheet?
 
     /// App IDs with a launch in flight, per bottle.
     @Published private var steamLaunching: [URL: Set<Int>] = [:]
@@ -68,6 +70,7 @@ final class LibraryModel: ObservableObject {
     @Published private var steamRunning: [URL: Set<Int>] = [:]
     /// Programs whose launch call has not returned yet.
     @Published private var programLaunching: Set<URL> = []
+    @Published var restoringEntryIDs: Set<String> = []
 
     var sort: LibrarySort = .recent {
         didSet {
@@ -78,6 +81,17 @@ final class LibraryModel: ObservableObject {
 
     private var orchestrators: [URL: SteamClientOrchestrator] = [:]
     private var cancellables: Set<AnyCancellable> = []
+    private let safetyRoot = WhiskyWineInstaller.applicationFolder.appending(path: "Launch Safety")
+    private lazy var saveVault = SaveVault(rootURL: safetyRoot.appending(path: "Save Vault"))
+    private lazy var launchJournal = LaunchTransactionJournal(
+        rootURL: safetyRoot.appending(path: "Transactions")
+    )
+    lazy var saveSafety = SteamSaveSafetyController(
+        vault: saveVault,
+        restoreJournal: SaveRestoreJournal(
+            rootURL: safetyRoot.appending(path: "Restore Transactions")
+        )
+    )
 
     // MARK: - State
 
@@ -87,7 +101,10 @@ final class LibraryModel: ObservableObject {
     /// grace period for up to two minutes while shaders precompile, which can
     /// outlast the game actually appearing.
     func state(for entry: LibraryEntry) -> LibraryEntryState {
-        switch entry.launch {
+        if restoringEntryIDs.contains(entry.id) {
+            return .restoring
+        }
+        return switch entry.launch {
         case let .program(url):
             programLaunching.contains(url) ? .launching : .idle
         case let .steam(appID):
@@ -131,7 +148,7 @@ final class LibraryModel: ObservableObject {
                 )
             }
 
-            trackSteam(in: bottle)
+            await trackSteamAndRecover(in: bottle)
         }
 
         rows = sorted(built)
@@ -191,6 +208,7 @@ final class LibraryModel: ObservableObject {
 
 extension LibraryModel {
     func launch(_ row: LibraryRow, bottles: [Bottle]) {
+        guard !restoringEntryIDs.contains(row.id) else { return }
         guard let bottle = bottles.first(where: { $0.url == row.item.bottleURL }) else { return }
 
         switch row.item.launch {
@@ -249,17 +267,14 @@ extension LibraryModel {
     ///
     /// Its `phases` and `runningAppIds` are what the cards read, so it has to
     /// outlive the launch that created it.
-    private func orchestrator(for bottle: Bottle) -> SteamClientOrchestrator {
+    func orchestrator(for bottle: Bottle) -> SteamClientOrchestrator {
         if let existing = orchestrators[bottle.url] {
             return existing
         }
 
-        let safetyRoot = WhiskyWineInstaller.applicationFolder.appending(path: "Launch Safety")
         let launchSafety = SteamLaunchSafetyController(
-            vault: SaveVault(rootURL: safetyRoot.appending(path: "Save Vault")),
-            journal: LaunchTransactionJournal(
-                rootURL: safetyRoot.appending(path: "Transactions")
-            )
+            vault: saveVault,
+            journal: launchJournal
         )
         let made = SteamClientOrchestrator(
             bottle: bottle,
@@ -273,8 +288,11 @@ extension LibraryModel {
             }
             .store(in: &cancellables)
         made.$runningAppIds
+            .removeDuplicates()
             .sink { [weak self] running in
                 self?.steamRunning[url] = running
+                guard running.isEmpty else { return }
+                Task { await self?.recoverSaveRestores(in: bottle) }
             }
             .store(in: &cancellables)
         made.$launchError
@@ -289,10 +307,35 @@ extension LibraryModel {
     }
 
     /// Starts (or restarts) running-state polling for a bottle's Steam games.
-    private func trackSteam(in bottle: Bottle) {
+    private func trackSteamAndRecover(in bottle: Bottle) async {
         let games = SteamLibrary.enumerate(bottleURL: bottle.url)
         guard !games.isEmpty else { return }
-        orchestrator(for: bottle).startTracking(games: games)
+        let orchestrator = orchestrator(for: bottle)
+        orchestrator.startTracking(games: games)
+        do {
+            try await orchestrator.recoverUnfinishedLaunches(games: games)
+        } catch {
+            saveError = error.localizedDescription
+        }
+        await recoverSaveRestores(in: bottle, games: games)
+    }
+
+    private func recoverSaveRestores(
+        in bottle: Bottle,
+        games suppliedGames: [SteamGame]? = nil
+    ) async {
+        let games = suppliedGames ?? SteamLibrary.enumerate(bottleURL: bottle.url)
+        guard !games.isEmpty else { return }
+        do {
+            let running = await orchestrator(for: bottle).runningAppIDs(in: games)
+            _ = try await saveSafety.recoverUnfinished(
+                bottleURL: bottle.url,
+                games: games,
+                runningAppIDs: running
+            )
+        } catch {
+            saveError = error.localizedDescription
+        }
     }
 
     /// Stops every poller. Called when the library leaves the screen.

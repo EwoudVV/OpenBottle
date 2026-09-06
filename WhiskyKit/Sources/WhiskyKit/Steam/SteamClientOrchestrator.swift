@@ -102,7 +102,8 @@ public final class SteamClientOrchestrator: ObservableObject {
     /// The in-flight client startup, shared by every concurrent launch.
     private var clientStartup: Task<Void, Error>?
     private var launchTasks: [Int: Task<Void, Never>] = [:]
-    var exitMonitorTasks: [Int: Task<Void, Never>] = [:]
+    var launchTransactionIDs: [Int: UUID] = [:]
+    var exitMonitorTasks: [UUID: Task<Void, Never>] = [:]
     var processSnapshot: (processes: [WineProcess], taken: Date)?
     var snapshotRead: Task<[WineProcess], Never>?
 
@@ -201,6 +202,7 @@ public final class SteamClientOrchestrator: ObservableObject {
         defer {
             phases[game.appId] = nil
             launchTasks[game.appId] = nil
+            launchTransactionIDs[game.appId] = nil
         }
 
         guard let steamRoot = SteamLibrary.detectInstall(bottleURL: bottle.url) else {
@@ -209,9 +211,15 @@ public final class SteamClientOrchestrator: ObservableObject {
         }
         let steamExe = steamRoot.appending(path: "steam.exe")
         let preparation: SteamLaunchPreparation?
+        let transactionID = launchSafety == nil ? nil : UUID()
+        launchTransactionIDs[game.appId] = transactionID
 
         do {
-            preparation = try await launchSafety?.prepare(game: game, bottleURL: bottle.url)
+            preparation = try await launchSafety?.prepare(
+                game: game,
+                bottleURL: bottle.url,
+                identifier: transactionID ?? UUID()
+            )
         } catch {
             if !Task.isCancelled {
                 launchError = error.localizedDescription

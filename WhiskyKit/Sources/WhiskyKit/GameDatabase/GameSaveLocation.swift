@@ -132,10 +132,7 @@ public enum GameSaveResolver {
         }
     }
 
-    private static func validate(path: String, kind: SaveSourceKind) throws {
-        if path.isEmpty, kind == .directory {
-            return
-        }
+    private static func validate(path: String, kind _: SaveSourceKind) throws {
         guard !path.isEmpty,
               !path.hasPrefix("/"),
               !path.contains("\\")

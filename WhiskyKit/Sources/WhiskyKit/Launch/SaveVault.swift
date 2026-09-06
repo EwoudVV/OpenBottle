@@ -69,8 +69,7 @@ public struct SaveVault: Sendable {
         try validate(sources: sources)
 
         let manager = FileManager.default
-        let bottleURL = rootURL.appending(path: bottleID, directoryHint: .isDirectory)
-        let gameURL = bottleURL.appending(path: gameID, directoryHint: .isDirectory)
+        let gameURL = gameDirectoryURL(bottleID: bottleID, gameID: gameID)
         let finalURL = gameURL.appending(path: identifier, directoryHint: .isDirectory)
         let stagingURL = gameURL.appending(
             path: ".\(identifier).staging-\(UUID().uuidString.lowercased())",

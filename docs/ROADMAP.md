@@ -26,6 +26,9 @@ or map loading is deferred unless a change to the shared runtime regresses it.
 - [x] persist launch stages so interrupted cleanup remains recoverable
 - [x] capture declared GameDB save paths in a per-bottle vault before Steam Play
 - [x] journal Steam library launch requests and finish them after the game exits
+- [x] restore verified snapshots while keeping the replaced save as a rollback point
+- [x] recover interrupted launch and save work when the library opens
+- [x] show verified restore points in the library and retain the newest ten
 - [ ] create one `LaunchTransaction` used by the library, CLI, shortcuts, Steam,
       and dragged files
 - [ ] snapshot renderer DLLs, settings, and the known save set before launch

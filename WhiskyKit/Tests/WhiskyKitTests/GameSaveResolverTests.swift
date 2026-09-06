@@ -70,15 +70,15 @@ final class GameSaveResolverTests: XCTestCase {
         }
     }
 
-    func testDirectoryCanUseTheRootItself() throws {
+    func testDirectoryCannotReplaceAnEntirePortableRoot() {
         let bottle = URL(fileURLWithPath: "/tmp/OpenBottleTests/bottle")
         let install = URL(fileURLWithPath: "/tmp/OpenBottleTests/game")
-        let source = try XCTUnwrap(GameSaveResolver.resolve(
+        XCTAssertThrowsError(try GameSaveResolver.resolve(
             [GameSaveLocation(id: "whole-save", root: .gameInstall, path: "", kind: .directory)],
             context: GameSaveContext(bottleURL: bottle, gameInstallURL: install)
-        ).first)
-
-        XCTAssertEqual(source.url.standardizedFileURL, install.standardizedFileURL)
+        )) { error in
+            XCTAssertEqual(error as? GameSaveResolverError, .invalidRelativePath(""))
+        }
     }
 
     func testContextDetectsTheBottleWineProfileName() throws {

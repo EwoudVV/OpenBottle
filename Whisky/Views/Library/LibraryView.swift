@@ -78,6 +78,14 @@ struct LibraryView: View {
         .onDisappear {
             model.stopTracking()
         }
+        .sheet(item: $model.restoreSheet) { sheet in
+            LibrarySaveRestoreSheet(
+                state: sheet,
+                isRestoring: model.restoringEntryIDs.contains(sheet.row.id)
+            ) { snapshot in
+                Task { await model.restore(snapshot, from: sheet, bottles: bottles) }
+            }
+        }
         .alert(
             "library.launch.failed",
             isPresented: Binding(
@@ -88,6 +96,17 @@ struct LibraryView: View {
             Button("button.ok") { model.launchError = nil }
         } message: {
             Text(model.launchError ?? "")
+        }
+        .alert(
+            "library.saves.failed",
+            isPresented: Binding(
+                get: { model.saveError != nil },
+                set: { if !$0 { model.saveError = nil } }
+            )
+        ) {
+            Button("button.ok") { model.saveError = nil }
+        } message: {
+            Text(model.saveError ?? "")
         }
     }
 
@@ -137,6 +156,14 @@ struct LibraryView: View {
         if model.state(for: row.item) == .running {
             Button("library.card.stop") { model.stop(row, bottles: bottles) }
         }
+        if model.canManageSaves(for: row) {
+            Button {
+                Task { await model.showRestorePoints(for: row, bottles: bottles) }
+            } label: {
+                Label("library.saves.menu", systemImage: "clock.arrow.circlepath")
+            }
+            .disabled(model.state(for: row.item) != .idle)
+        }
         Divider()
         if case let .program(url) = row.item.launch {
             Button("button.showInFinder") {
@@ -171,5 +198,105 @@ struct LibraryView: View {
                     .buttonStyle(.borderedProminent)
             }
         }
+    }
+}
+
+private struct LibrarySaveRestoreSheet: View {
+    let state: LibraryRestoreSheet
+    let isRestoring: Bool
+    let restore: (SaveSnapshot) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var selection: String?
+
+    init(
+        state: LibraryRestoreSheet,
+        isRestoring: Bool,
+        restore: @escaping (SaveSnapshot) -> Void
+    ) {
+        self.state = state
+        self.isRestoring = isRestoring
+        self.restore = restore
+        _selection = State(initialValue: state.inventory.verified.first?.manifest.id)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("library.saves.title")
+                    .font(.title2.bold())
+                Text(state.row.item.name)
+                    .font(.headline)
+                Text("library.saves.description")
+                    .foregroundStyle(.secondary)
+            }
+
+            if !state.inventory.invalidSnapshotIDs.isEmpty {
+                Label("library.saves.invalid", systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+            }
+
+            if state.inventory.verified.isEmpty {
+                ContentUnavailableView(
+                    "library.saves.empty",
+                    systemImage: "clock.badge.questionmark",
+                    description: Text("library.saves.empty.description")
+                )
+            } else {
+                restorePointList
+            }
+
+            HStack {
+                Spacer()
+                Button("button.cancel") { dismiss() }
+                    .disabled(isRestoring)
+                Button {
+                    if let selectedSnapshot {
+                        restore(selectedSnapshot)
+                    }
+                } label: {
+                    if isRestoring {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Text("library.saves.restore")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(selectedSnapshot == nil || isRestoring)
+                .keyboardShortcut(.defaultAction)
+                .accessibilityIdentifier("library.saves.restore")
+            }
+        }
+        .padding(24)
+        .frame(minWidth: 540, minHeight: 420)
+        .interactiveDismissDisabled(isRestoring)
+        .accessibilityIdentifier("library.saves.sheet")
+    }
+
+    private var restorePointList: some View {
+        List(state.inventory.verified, id: \.manifest.id, selection: $selection) { snapshot in
+            HStack {
+                Image(systemName: "clock.arrow.circlepath")
+                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(snapshot.manifest.createdAt.formatted(date: .abbreviated, time: .shortened))
+                    Text(snapshotSize(snapshot), format: .byteCount(style: .file))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .tag(snapshot.manifest.id)
+        }
+        .accessibilityIdentifier("library.saves.list")
+    }
+
+    private var selectedSnapshot: SaveSnapshot? {
+        state.inventory.verified.first { $0.manifest.id == selection }
+    }
+
+    private func snapshotSize(_ snapshot: SaveSnapshot) -> Int64 {
+        snapshot.manifest.files.reduce(0) { $0 + $1.byteCount }
     }
 }

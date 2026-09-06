@@ -20,6 +20,36 @@ import Foundation
 
 @MainActor
 extension SteamClientOrchestrator {
+    /// Reattaches durable records to running games and closes records whose game exited.
+    public func recoverUnfinishedLaunches(games: [SteamGame]) async throws {
+        guard let launchSafety else { return }
+        let records = try await launchSafety.unfinished(bottleURL: bottle.url)
+        let ownedTransactions = Set(launchTransactionIDs.values)
+        let running = await runningImageNames()
+        for record in records where !ownedTransactions.contains(record.id) {
+            let game = launchSafety.game(for: record, among: games)
+            let isRunning = game.map {
+                !SteamLibrary.executableNames(under: $0.installURL).isDisjoint(with: running)
+            } ?? false
+            if let game,
+               isRunning,
+               [.launchRequested, .monitoring, .recoveryNeeded].contains(record.stage) {
+                let preparation = try await launchSafety.resumeMonitoring(record)
+                startExitMonitor(for: game, preparation: preparation)
+            } else {
+                _ = try await launchSafety.finishInterrupted(record)
+            }
+        }
+    }
+
+    public func runningAppIDs(in games: [SteamGame]) async -> Set<Int> {
+        let running = await runningImageNames()
+        return Set(games.compactMap { game in
+            let names = SteamLibrary.executableNames(under: game.installURL)
+            return names.isDisjoint(with: running) ? nil : game.appId
+        })
+    }
+
     func beginExitMonitoring(
         _ game: SteamGame,
         preparation: SteamLaunchPreparation?
@@ -49,8 +79,9 @@ extension SteamClientOrchestrator {
         for game: SteamGame,
         preparation: SteamLaunchPreparation
     ) {
-        exitMonitorTasks[game.appId]?.cancel()
-        exitMonitorTasks[game.appId] = Task { [weak self] in
+        let identifier = preparation.transactionID
+        exitMonitorTasks[identifier]?.cancel()
+        exitMonitorTasks[identifier] = Task { [weak self] in
             await self?.monitorGameExit(game, preparation: preparation)
         }
     }
@@ -59,7 +90,7 @@ extension SteamClientOrchestrator {
         _ game: SteamGame,
         preparation: SteamLaunchPreparation
     ) async {
-        defer { exitMonitorTasks[game.appId] = nil }
+        defer { exitMonitorTasks[preparation.transactionID] = nil }
         let names = SteamLibrary.executableNames(under: game.installURL)
         guard !names.isEmpty else {
             await complete(preparation)
@@ -80,7 +111,7 @@ extension SteamClientOrchestrator {
 
     private func complete(_ preparation: SteamLaunchPreparation) async {
         do {
-            _ = try await launchSafety?.complete(preparation)
+            _ = try await launchSafety?.finishAfterExit(preparation)
         } catch {
             await recordFailure(preparation, code: "launch-cleanup-failed")
             launchError = error.localizedDescription
