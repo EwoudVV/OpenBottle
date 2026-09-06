@@ -43,6 +43,14 @@ final class BottleImporterTests: XCTestCase {
             try Data(contentsOf: result.bottleURL.appending(path: "drive_c/save.dat")),
             Data("progress".utf8)
         )
+        let copiedSettings = try BottleSettings.decode(
+            from: result.bottleURL.appending(path: "Metadata.plist")
+        )
+        XCTAssertEqual(copiedSettings.pins.first?.url, result.bottleURL.appending(path: "drive_c/save.dat"))
+        XCTAssertEqual(copiedSettings.blocklist, [result.bottleURL.appending(path: "drive_c/save.dat")])
+        let sourceSettings = try BottleSettings.decode(from: metadata)
+        XCTAssertEqual(sourceSettings.pins.first?.url, source.appending(path: "drive_c/save.dat"))
+        XCTAssertEqual(sourceSettings.blocklist, [source.appending(path: "drive_c/save.dat")])
         XCTAssertTrue(FileManager.default.fileExists(
             atPath: result.bottleURL.appending(path: "drive_c/empty").path
         ))
@@ -133,8 +141,12 @@ final class BottleImporterTests: XCTestCase {
             at: url.appending(path: "dosdevices"),
             withIntermediateDirectories: true
         )
-        try Data("metadata".utf8).write(to: url.appending(path: "Metadata.plist"))
         try Data("progress".utf8).write(to: url.appending(path: "drive_c/save.dat"))
+        var settings = BottleSettings()
+        settings.name = "Games"
+        settings.pins = [PinnedProgram(name: "Game", url: url.appending(path: "drive_c/save.dat"))]
+        settings.blocklist = [url.appending(path: "drive_c/save.dat")]
+        try settings.encode(to: url.appending(path: "Metadata.plist"))
         try FileManager.default.createSymbolicLink(
             atPath: url.appending(path: "dosdevices/c:").path,
             withDestinationPath: "../drive_c"

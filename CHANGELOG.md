@@ -39,6 +39,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   initializer from WhiskyKit's public API, along with the `isClickOnce`
   property, so the kit needs a major version bump (#215).
 
+## [0.1.0-alpha.6] - 2026-09-06 (App)
+
+### Fixed
+- Imported pins and blocked-program paths now point into the copied OpenBottle
+  bottle instead of keeping absolute paths into the source Whisky bottle.
+
 ## [0.1.0-alpha.5] - 2026-09-06 (App)
 
 ### Fixed
@@ -944,7 +950,8 @@ When adding entries to this changelog, use the following categories:
 - **Security** - Vulnerability fixes
 - **Documentation** - Documentation-only changes
 
-[Unreleased]: https://github.com/EwoudVV/OpenBottle/compare/app-v0.1.0-alpha.5...HEAD
+[Unreleased]: https://github.com/EwoudVV/OpenBottle/compare/app-v0.1.0-alpha.6...HEAD
+[0.1.0-alpha.6]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.6
 [0.1.0-alpha.5]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.5
 [0.1.0-alpha.4]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.4
 [0.1.0-alpha.3]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.3

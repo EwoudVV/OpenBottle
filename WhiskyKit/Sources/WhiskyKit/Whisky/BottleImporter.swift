@@ -120,10 +120,10 @@ public enum BottleImporter {
         let before = try manifest(for: source)
         try requireCapacity(for: before.byteCount, at: root)
         try manager.createDirectory(at: root, withIntermediateDirectories: true)
-        var removeStaging = true
+        var cleanupURL: URL? = staging
         defer {
-            if removeStaging {
-                try? manager.removeItem(at: staging)
+            if let cleanupURL {
+                try? manager.removeItem(at: cleanupURL)
             }
         }
 
@@ -136,16 +136,47 @@ public enum BottleImporter {
             throw BottleImportError.sourceChanged
         }
         try manager.moveItem(at: staging, to: destination)
-        removeStaging = false
+        cleanupURL = destination
         guard try manifest(for: destination) == before else {
             throw BottleImportError.copyVerificationFailed
         }
+        try rewriteBottleReferences(at: destination, from: source, to: destination)
+        cleanupURL = nil
         return BottleImportResult(
             sourceURL: source,
             bottleURL: destination,
             fileCount: before.files.count,
             byteCount: before.byteCount
         )
+    }
+
+    /// A copied bottle must not keep absolute paths into the app it came from.
+    /// Rewrite only metadata references that point below the source bottle,
+    /// after the byte-for-byte copy has been verified and before it is returned
+    /// for registration. Older or damaged metadata remains byte-for-byte as copied.
+    private static func rewriteBottleReferences(at bottleURL: URL, from source: URL, to destination: URL) throws {
+        let metadataURL = bottleURL.appending(path: "Metadata.plist")
+        let data = try Data(contentsOf: metadataURL)
+        guard var settings = try? PropertyListDecoder().decode(BottleSettings.self, from: data) else {
+            return
+        }
+
+        let originalPins = settings.pins
+        let originalBlocklist = settings.blocklist
+        for index in settings.pins.indices {
+            if let url = settings.pins[index].url {
+                settings.pins[index].url = url.updateParentBottle(old: source, new: destination)
+            }
+        }
+        for index in settings.blocklist.indices {
+            settings.blocklist[index] = settings.blocklist[index]
+                .updateParentBottle(old: source, new: destination)
+        }
+
+        guard settings.pins != originalPins || settings.blocklist != originalBlocklist else {
+            return
+        }
+        try settings.encode(to: metadataURL)
     }
 
     private static func validatedSource(_ sourceURL: URL) throws -> URL {
