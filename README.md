@@ -22,7 +22,7 @@ on a fresh Mac:
 
 1. open OpenBottle and follow the setup for Rosetta and the verified Stable
    runtime;
-2. OpenBottle creates one hidden-by-default `Games` bottle;
+2. OpenBottle creates one `Games` bottle and opens the game library;
 3. click **Install a Windows game…** and choose an EXE, MSI, MSIX, or AppX
    installer;
 4. finish the Windows installer normally;
@@ -32,6 +32,8 @@ on a fresh Mac:
 Steam games installed in the `Games` bottle appear in the same library.
 dragged executables, Finder opens, Dock shortcuts, `openbottle://` links,
 Steam App IDs, and CLI launches all enter the same safe launch path.
+the Install button stays in the toolbar after the first game, so adding another
+one uses the same flow.
 
 ## what Play does
 

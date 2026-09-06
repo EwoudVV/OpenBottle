@@ -156,7 +156,7 @@ struct FileOpenView: View {
     private func publishInstallerResult(before: Set<URL>, bottle: Bottle) async {
         let after = await Self.installedExecutables(in: bottle)
         let added = after.subtracting(before).filter(Self.isLikelyInstalledProgram)
-        let candidate = added.max { Self.fileSize($0) < Self.fileSize($1) }
+        let candidate = added.max { Self.candidateScore($0) < Self.candidateScore($1) }
         if let candidate,
            !bottle.settings.pins.contains(where: { $0.url == candidate }) {
             let name = candidate.deletingPathExtension().lastPathComponent
@@ -188,5 +188,30 @@ struct FileOpenView: View {
     private static func fileSize(_ url: URL) -> Int64 {
         let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
         return (attributes?[.size] as? NSNumber)?.int64Value ?? 0
+    }
+
+    private static func candidateScore(_ url: URL) -> Int64 {
+        let name = url.lastPathComponent.lowercased()
+        let preferred = [
+            "steam.exe",
+            "epicgameslauncher.exe",
+            "eadesktop.exe",
+            "ubisoftconnect.exe",
+            "rockstar games launcher.exe",
+            "battle.net launcher.exe",
+            "galaxyclient.exe"
+        ]
+        var score = min(fileSize(url) / 1_024, 100_000)
+        if preferred.contains(name) {
+            score += 10_000_000
+        } else if LauncherType.detect(from: url) != nil {
+            score += 1_000_000
+        }
+        if ["helper", "service", "crash", "update", "uninstall", "setup", "bootstrap"]
+            .contains(where: name.contains) {
+            score -= 2_000_000
+        }
+        score -= Int64(url.pathComponents.count * 100)
+        return score
     }
 }

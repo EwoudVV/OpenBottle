@@ -72,6 +72,7 @@ struct LibraryView: View {
         .navigationTitle("library.title")
         .searchable(text: $search, prompt: Text("library.search"))
         .toolbar {
+            installButton
             runtimeMenu
             sortMenu
         }
@@ -142,6 +143,18 @@ struct LibraryView: View {
                 Label("library.sort", systemImage: "arrow.up.arrow.down")
             }
             .accessibilityIdentifier("library.sort")
+        }
+    }
+
+    private var installButton: some ToolbarContent {
+        ToolbarItem(placement: .primaryAction) {
+            Button {
+                chooseWindowsInstaller()
+            } label: {
+                Label("library.empty.install", systemImage: "plus.app")
+            }
+            .help("library.empty.install")
+            .accessibilityIdentifier("library.install")
         }
     }
 

@@ -250,13 +250,13 @@ struct ContentView: View {
 
     private func createDefaultBottleIfNeeded() {
         guard bottleVM.bottles.isEmpty,
-              WhiskyWineInstaller.isWhiskyWineInstalled(),
-              newlyCreatedBottleURL == nil
+              WhiskyWineInstaller.isWhiskyWineInstalled()
         else { return }
-        newlyCreatedBottleURL = bottleVM.createNewBottle(
+        _ = bottleVM.createNewBottle(
             bottleName: "Games",
             winVersion: .win10,
             bottleURL: BottleData.defaultBottleDir
         )
+        selected = nil
     }
 }
