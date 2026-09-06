@@ -150,6 +150,7 @@ struct SteamLaunchSafetyIntegrationTests {
 
         #expect(snapshotWasPublishedAtLaunch)
         #expect(driver.launched == [game.appId])
+        #expect(driver.launchedOffline == [true])
         #expect(orchestrator.launchError == nil)
     }
 

@@ -64,6 +64,42 @@ final class LaunchSafetyControllerTests: XCTestCase {
         XCTAssertTrue(unfinished.isEmpty)
     }
 
+    func testBottleLeaseBlocksOverlapAndReleasesAfterCleanup() async throws {
+        let fixture = try makeFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let journal = LaunchTransactionJournal(rootURL: fixture.root.appending(path: "transactions"))
+        let controller = LaunchSafetyController(
+            saveVault: SaveVault(rootURL: fixture.root.appending(path: "save-vault")),
+            journal: journal
+        )
+        let first = try await controller.begin(
+            bottleURL: fixture.bottle,
+            gameID: "first-game",
+            saveSources: []
+        )
+
+        do {
+            _ = try await controller.begin(
+                bottleURL: fixture.bottle,
+                gameID: "second-game",
+                saveSources: []
+            )
+            XCTFail("Expected overlapping launch to be blocked")
+        } catch {
+            XCTAssertEqual(error as? LaunchLeaseError, .bottleBusy)
+        }
+
+        let firstRecord = try await journal.record(for: first.transactionID)
+        _ = try await controller.finishInterrupted(firstRecord, bottleURL: fixture.bottle)
+        let second = try await controller.begin(
+            bottleURL: fixture.bottle,
+            gameID: "second-game",
+            saveSources: []
+        )
+        let secondRecord = try await journal.record(for: second.transactionID)
+        _ = try await controller.finishInterrupted(secondRecord, bottleURL: fixture.bottle)
+    }
+
     private func makeFixture() throws -> Fixture {
         let root = FileManager.default.temporaryDirectory
             .appending(path: "LaunchSafetyControllerTests-\(UUID().uuidString)")

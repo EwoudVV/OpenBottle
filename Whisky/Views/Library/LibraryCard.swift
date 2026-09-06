@@ -51,6 +51,7 @@ struct LibraryCard: View {
     let bottleName: String?
     let lastPlayed: Date?
     let state: LibraryEntryState
+    let savePolicy: GameSavePolicy?
     let launch: () -> Void
 
     @State private var icon: Image?
@@ -145,7 +146,10 @@ struct LibraryCard: View {
                         iconView
                     }
                     Spacer()
-                    statusView
+                    HStack(spacing: 7) {
+                        savePolicyView
+                        statusView
+                    }
                 }
                 Spacer(minLength: 8)
                 Text(title)
@@ -209,6 +213,25 @@ struct LibraryCard: View {
                     .transition(.opacity.combined(with: .scale))
             }
         }
+    }
+
+    @ViewBuilder
+    private var savePolicyView: some View {
+        if let savePolicy {
+            Image(systemName: savePolicy == .localOnly ? "externaldrive.fill.badge.checkmark" : "icloud.fill")
+                .font(.caption)
+                .foregroundStyle(savePolicy == .localOnly ? .green : foreground.opacity(0.8))
+                .padding(7)
+                .cardGlass(.circle)
+                .help(Text(savePolicyLabel(savePolicy)))
+                .accessibilityLabel(Text(savePolicyLabel(savePolicy)))
+        }
+    }
+
+    private func savePolicyLabel(_ policy: GameSavePolicy) -> LocalizedStringKey {
+        policy == .localOnly
+            ? LocalizedStringKey("library.saves.localOnly")
+            : LocalizedStringKey("library.saves.cloudAllowed")
     }
 
     @ViewBuilder

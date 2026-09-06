@@ -71,6 +71,7 @@ final class LibraryModel: ObservableObject {
     /// Programs whose launch call has not returned yet.
     @Published private var programLaunching: Set<URL> = []
     @Published var restoringEntryIDs: Set<String> = []
+    @Published private var savePolicies: [String: GameSavePolicy] = [:]
 
     var sort: LibrarySort = .recent {
         didSet {
@@ -86,6 +87,7 @@ final class LibraryModel: ObservableObject {
     private lazy var launchJournal = LaunchTransactionJournal(
         rootURL: safetyRoot.appending(path: "Transactions")
     )
+    private let savePolicyStore = GameSavePolicyStore.live()
     lazy var saveSafety = SteamSaveSafetyController(
         vault: saveVault,
         restoreJournal: SaveRestoreJournal(
@@ -151,6 +153,20 @@ final class LibraryModel: ObservableObject {
             await trackSteamAndRecover(in: bottle)
         }
 
+        var policies: [String: GameSavePolicy] = [:]
+        for row in built {
+            guard case let .steam(appID) = row.item.launch else { continue }
+            do {
+                policies[row.id] = try await savePolicyStore.policy(
+                    bottleID: BottleLaunchIdentity.id(for: row.item.bottleURL),
+                    gameID: SteamSavePolicyIdentity.gameID(appID: appID)
+                )
+            } catch {
+                saveError = error.localizedDescription
+                policies[row.id] = .localOnly
+            }
+        }
+        savePolicies = policies
         rows = sorted(built)
     }
 
@@ -207,6 +223,25 @@ final class LibraryModel: ObservableObject {
 // MARK: - Launching
 
 extension LibraryModel {
+    func savePolicy(for row: LibraryRow) -> GameSavePolicy? {
+        guard case .steam = row.item.launch else { return nil }
+        return savePolicies[row.id] ?? .localOnly
+    }
+
+    func setSavePolicy(_ policy: GameSavePolicy, for row: LibraryRow) async {
+        guard case let .steam(appID) = row.item.launch else { return }
+        do {
+            _ = try await savePolicyStore.setPolicy(
+                policy,
+                bottleID: BottleLaunchIdentity.id(for: row.item.bottleURL),
+                gameID: SteamSavePolicyIdentity.gameID(appID: appID)
+            )
+            savePolicies[row.id] = policy
+        } catch {
+            saveError = error.localizedDescription
+        }
+    }
+
     func launch(_ row: LibraryRow, bottles: [Bottle]) {
         guard !restoringEntryIDs.contains(row.id) else { return }
         guard let bottle = bottles.first(where: { $0.url == row.item.bottleURL }) else { return }
@@ -278,7 +313,8 @@ extension LibraryModel {
 
         let launchSafety = SteamLaunchSafetyController(
             vault: saveVault,
-            journal: launchJournal
+            journal: launchJournal,
+            savePolicyStore: savePolicyStore
         )
         let made = SteamClientOrchestrator(
             bottle: bottle,

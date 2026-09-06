@@ -60021,6 +60021,22 @@
         }
       }
     },
+    "library.saves.cloudAllowed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Steam Cloud allowed"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Steam Cloud allowed"
+          }
+        }
+      }
+    },
     "library.saves.description" : {
       "localizations" : {
         "en" : {
@@ -60133,6 +60149,22 @@
         }
       }
     },
+    "library.saves.localOnly" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local saves only"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local saves only"
+          }
+        }
+      }
+    },
     "library.saves.menu" : {
       "localizations" : {
         "en" : {
@@ -60145,6 +60177,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Restore Saves…"
+          }
+        }
+      }
+    },
+    "library.saves.policy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save policy"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save policy"
           }
         }
       }

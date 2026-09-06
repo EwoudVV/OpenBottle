@@ -46,6 +46,7 @@ public struct LaunchSafetyController: Sendable {
     private let saveVault: SaveVault
     private let journal: LaunchTransactionJournal
     private let configurationStore: LaunchConfigurationStore
+    private let leaseStore: LaunchLeaseStore
     private let maximumSaveSnapshots: Int
     private let maximumConfigurationSnapshots: Int
 
@@ -54,6 +55,7 @@ public struct LaunchSafetyController: Sendable {
         journal: LaunchTransactionJournal,
         configurationVault: SaveVault? = nil,
         configurationRestoreJournal: SaveRestoreJournal? = nil,
+        leaseStore: LaunchLeaseStore? = nil,
         maximumSaveSnapshots: Int = SaveVault.defaultMaximumSnapshots,
         maximumConfigurationSnapshots: Int = LaunchConfigurationStore.defaultMaximumSnapshots
     ) {
@@ -69,6 +71,9 @@ public struct LaunchSafetyController: Sendable {
         self.configurationStore = LaunchConfigurationStore(
             vault: configurationVault,
             restoreJournal: restoreJournal
+        )
+        self.leaseStore = leaseStore ?? LaunchLeaseStore(
+            rootURL: safetyRoot.appending(path: "Leases")
         )
         self.maximumSaveSnapshots = max(1, maximumSaveSnapshots)
         self.maximumConfigurationSnapshots = max(1, maximumConfigurationSnapshots)
@@ -109,6 +114,11 @@ public struct LaunchSafetyController: Sendable {
         )
 
         do {
+            _ = try await leaseStore.acquire(
+                bottleID: bottleID,
+                transactionID: identifier,
+                at: date
+            )
             _ = try await journal.advance(identifier, to: .preflightPassed, at: date)
             let snapshot = try await captureSaves(
                 bottleID: bottleID,
@@ -133,7 +143,11 @@ public struct LaunchSafetyController: Sendable {
                 saveSnapshot: snapshot
             )
         } catch {
-            _ = try? await journal.fail(identifier, code: "save-capture-failed")
+            try? await leaseStore.release(bottleID: bottleID, transactionID: identifier)
+            _ = try? await journal.fail(
+                identifier,
+                code: Self.failureCode(for: error)
+            )
             throw error
         }
     }
@@ -156,6 +170,10 @@ public struct LaunchSafetyController: Sendable {
             }.value
             return try await journal.advance(preparation.transactionID, to: .prepared, at: date)
         } catch {
+            try? await leaseStore.release(
+                bottleID: preparation.bottleID,
+                transactionID: preparation.transactionID
+            )
             _ = try? await journal.fail(preparation.transactionID, code: "configuration-capture-failed")
             throw error
         }
@@ -180,7 +198,11 @@ public struct LaunchSafetyController: Sendable {
         _ preparation: LaunchSafetyPreparation,
         code: String
     ) async throws -> LaunchTransactionRecord {
-        try await journal.fail(preparation.transactionID, code: code)
+        let record = try await journal.fail(preparation.transactionID, code: code)
+        if record.stage.isTerminal {
+            try await releaseLease(preparation)
+        }
+        return record
     }
 
     @discardableResult
@@ -219,6 +241,7 @@ public struct LaunchSafetyController: Sendable {
         let preparation = preparation(for: record, bottleURL: bottleURL)
         switch record.stage {
         case .created, .preflightPassed, .saveCaptured:
+            try await releaseLease(preparation)
             return try await journal.fail(record.id, code: "interrupted-before-launch")
         case .prepared, .launchRequested:
             return try await finishFailure(record, preparation: preparation, code: "interrupted-launch")
@@ -232,6 +255,7 @@ public struct LaunchSafetyController: Sendable {
             )
         case .cleaningUp:
             try await restoreConfiguration(preparation)
+            try await releaseLease(preparation)
             let terminal: LaunchTransactionStage = record.failureCode == nil ? .completed : .failed
             return try await journal.advance(record.id, to: terminal)
         case .completed, .failed:
@@ -275,6 +299,7 @@ private extension LaunchSafetyController {
             )
         case .cleaningUp:
             try await restoreConfiguration(preparation)
+            try await releaseLease(preparation)
             let terminal: LaunchTransactionStage = record.failureCode == nil ? .completed : .failed
             return try await journal.advance(record.id, to: terminal)
         default:
@@ -289,6 +314,7 @@ private extension LaunchSafetyController {
         _ = try await journal.advance(record.id, to: .cleaningUp)
         do {
             try await restoreConfiguration(preparation)
+            try await releaseLease(preparation)
             let completed = try await journal.advance(record.id, to: .completed)
             try? enforceRetention(completed, preparation: preparation)
             return completed
@@ -310,6 +336,7 @@ private extension LaunchSafetyController {
         _ = try await journal.advance(record.id, to: .cleaningUp)
         do {
             try await restoreConfiguration(preparation)
+            try await releaseLease(preparation)
             let failed = try await journal.advance(record.id, to: .failed)
             try? enforceRetention(failed, preparation: preparation)
             return failed
@@ -326,6 +353,13 @@ private extension LaunchSafetyController {
             gameID: preparation.gameID,
             snapshotID: preparation.transactionID.uuidString.lowercased(),
             operationID: preparation.transactionID
+        )
+    }
+
+    private func releaseLease(_ preparation: LaunchSafetyPreparation) async throws {
+        try await leaseStore.release(
+            bottleID: preparation.bottleID,
+            transactionID: preparation.transactionID
         )
     }
 

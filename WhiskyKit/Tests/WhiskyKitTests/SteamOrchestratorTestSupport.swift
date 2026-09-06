@@ -37,8 +37,10 @@ final class FakeSteamClientDriver: SteamClientDriver {
     private(set) var listCalls = 0
     private(set) var hostCalls = 0
     private(set) var startClientCalls = 0
+    private(set) var startClientOffline: [Bool] = []
     private(set) var fixesCalls = 0
     private(set) var launched: [Int] = []
+    private(set) var launchedOffline: [Bool] = []
     private(set) var killed: [Int32] = []
     private(set) var readyCalls = 0
     private(set) var shutdownCalls = 0
@@ -67,8 +69,9 @@ final class FakeSteamClientDriver: SteamClientDriver {
         }
     }
 
-    func startClient(steamExe _: URL) {
+    func startClient(steamExe _: URL, offline: Bool) {
         startClientCalls += 1
+        startClientOffline.append(offline)
         onStartClient?()
     }
 
@@ -76,11 +79,12 @@ final class FakeSteamClientDriver: SteamClientDriver {
         fixesCalls += 1
     }
 
-    func launchGame(_ game: SteamGame) throws {
+    func launchGame(_ game: SteamGame, offline: Bool) throws {
         if let launchFailure {
             throw launchFailure
         }
         launched.append(game.appId)
+        launchedOffline.append(offline)
         onLaunchGame?(game)
     }
 

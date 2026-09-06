@@ -26,6 +26,7 @@ public struct SteamLaunchSafetyController: Sendable {
     private let controller: LaunchSafetyController
     private let entries: [GameDBEntry]
     private let wineUserName: String?
+    private let savePolicyStore: GameSavePolicyStore
 
     public init(
         vault: SaveVault,
@@ -34,7 +35,8 @@ public struct SteamLaunchSafetyController: Sendable {
         wineUserName: String? = nil,
         maximumSnapshots: Int = SaveVault.defaultMaximumSnapshots,
         configurationVault: SaveVault? = nil,
-        configurationRestoreJournal: SaveRestoreJournal? = nil
+        configurationRestoreJournal: SaveRestoreJournal? = nil,
+        savePolicyStore: GameSavePolicyStore? = nil
     ) {
         self.controller = LaunchSafetyController(
             saveVault: vault,
@@ -45,6 +47,9 @@ public struct SteamLaunchSafetyController: Sendable {
         )
         self.entries = entries
         self.wineUserName = wineUserName
+        self.savePolicyStore = savePolicyStore ?? GameSavePolicyStore(
+            rootURL: journal.rootURL.deletingLastPathComponent().appending(path: "Save Policies")
+        )
     }
 
     public static func live(
@@ -62,7 +67,18 @@ public struct SteamLaunchSafetyController: Sendable {
             ),
             configurationRestoreJournal: SaveRestoreJournal(
                 rootURL: root.appending(path: "Configuration Restore Transactions")
-            )
+            ),
+            savePolicyStore: .live()
+        )
+    }
+
+    public func savePolicy(
+        for game: SteamGame,
+        bottleURL: URL
+    ) async throws -> GameSavePolicy {
+        try await savePolicyStore.policy(
+            bottleID: BottleLaunchIdentity.id(for: bottleURL),
+            gameID: SteamSavePolicyIdentity.gameID(appID: game.appId)
         )
     }
 

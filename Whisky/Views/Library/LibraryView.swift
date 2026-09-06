@@ -141,6 +141,7 @@ struct LibraryView: View {
                         bottleName: row.bottleName,
                         lastPlayed: row.lastPlayed,
                         state: model.state(for: row.item),
+                        savePolicy: model.savePolicy(for: row),
                         launch: { model.launch(row, bottles: bottles) }
                     )
                     .contextMenu { menu(for: row) }
@@ -164,6 +165,15 @@ struct LibraryView: View {
             }
             .disabled(model.state(for: row.item) != .idle)
         }
+        if case .steam = row.item.launch {
+            Menu {
+                savePolicyButton(.localOnly, for: row)
+                savePolicyButton(.cloudAllowed, for: row)
+            } label: {
+                Label("library.saves.policy", systemImage: "externaldrive.badge.icloud")
+            }
+            .disabled(model.state(for: row.item) != .idle)
+        }
         Divider()
         if case let .program(url) = row.item.launch {
             Button("button.showInFinder") {
@@ -176,6 +186,25 @@ struct LibraryView: View {
         // gets without a deep link into it.
         Button("library.card.configure") {
             selectedBottle = row.item.bottleURL
+        }
+    }
+
+    private func savePolicyButton(
+        _ policy: GameSavePolicy,
+        for row: LibraryRow
+    ) -> some View {
+        let selected = model.savePolicy(for: row) == policy
+        let title = policy == .localOnly
+            ? LocalizedStringKey("library.saves.localOnly")
+            : LocalizedStringKey("library.saves.cloudAllowed")
+        return Button {
+            Task { await model.setSavePolicy(policy, for: row) }
+        } label: {
+            Label {
+                Text(title)
+            } icon: {
+                Image(systemName: selected ? "checkmark" : "circle")
+            }
         }
     }
 

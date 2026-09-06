@@ -223,8 +223,10 @@ public final class SteamClientOrchestrator: ObservableObject {
         let preparation: SteamLaunchPreparation?
         let transactionID = launchSafety == nil ? nil : UUID()
         launchTransactionIDs[game.appId] = transactionID
+        guard let offline = await resolvedOfflinePolicy(for: game) else { return }
 
-        if Self.shouldApplyLauncherFixes(settings: bottle.settings) {
+        let clientAlreadyRunning = await isClientRunning()
+        if !clientAlreadyRunning, Self.shouldApplyLauncherFixes(settings: bottle.settings) {
             driver.applyLauncherFixes()
         }
 
@@ -245,18 +247,41 @@ public final class SteamClientOrchestrator: ObservableObject {
         }
         if await recordCancellationIfNeeded(preparation) { return }
 
-        guard await ensureSteamClient(steamExe, preparation: preparation) else { return }
-        guard await requestLaunch(game, preparation: preparation) else { return }
+        guard await ensureSteamClient(
+            steamExe,
+            preparation: preparation,
+            offline: offline
+        )
+        else { return }
+        guard await requestLaunch(
+            game,
+            preparation: preparation,
+            offline: offline
+        )
+        else { return }
         guard await observeGameStart(game, preparation: preparation) else { return }
         await beginExitMonitoring(game, preparation: preparation)
     }
 
+    private func resolvedOfflinePolicy(for game: SteamGame) async -> Bool? {
+        do {
+            return try await launchSafety?.savePolicy(
+                for: game,
+                bottleURL: bottle.url
+            ) == .localOnly
+        } catch {
+            launchError = error.localizedDescription
+            return nil
+        }
+    }
+
     private func ensureSteamClient(
         _ steamExe: URL,
-        preparation: SteamLaunchPreparation?
+        preparation: SteamLaunchPreparation?,
+        offline: Bool
     ) async -> Bool {
         do {
-            try await ensureClientRunning(steamExe: steamExe)
+            try await ensureClientRunning(steamExe: steamExe, offline: offline)
         } catch {
             let failureCode = Task.isCancelled ? "launch-cancelled" : "steam-client-start-failed"
             await recordFailure(preparation, code: failureCode)
@@ -270,7 +295,8 @@ public final class SteamClientOrchestrator: ObservableObject {
 
     private func requestLaunch(
         _ game: SteamGame,
-        preparation: SteamLaunchPreparation?
+        preparation: SteamLaunchPreparation?,
+        offline: Bool
     ) async -> Bool {
         phases[game.appId] = .launching
         do {
@@ -278,7 +304,7 @@ public final class SteamClientOrchestrator: ObservableObject {
                 _ = try await launchSafety?.markLaunchRequested(preparation)
             }
             if await recordCancellationIfNeeded(preparation) { return false }
-            try driver.launchGame(game)
+            try driver.launchGame(game, offline: offline)
             return true
         } catch {
             await recordFailure(preparation, code: "game-launch-request-failed")
@@ -302,23 +328,23 @@ public final class SteamClientOrchestrator: ObservableObject {
         return await !recordCancellationIfNeeded(preparation)
     }
 
-    private func ensureClientRunning(steamExe: URL) async throws {
+    private func ensureClientRunning(steamExe: URL, offline: Bool) async throws {
         if let clientStartup {
             return try await clientStartup.value
         }
-        let startup = Task { try await startClient(steamExe: steamExe) }
+        let startup = Task { try await startClient(steamExe: steamExe, offline: offline) }
         clientStartup = startup
         defer { clientStartup = nil }
         try await startup.value
     }
 
-    private func startClient(steamExe: URL) async throws {
+    private func startClient(steamExe: URL, offline: Bool) async throws {
         if await isClientRunning() {
             driver.clientDidBecomeReady()
             return
         }
 
-        driver.startClient(steamExe: steamExe)
+        driver.startClient(steamExe: steamExe, offline: offline)
 
         if await watch.waitForAny(of: ["steam.exe"], timeout: timing.clientReadyTimeout) {
             driver.clientDidBecomeReady()

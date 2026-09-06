@@ -37,14 +37,14 @@ public protocol SteamClientDriver: AnyObject {
 
     /// Starts the Steam client silently. Must return promptly: the client runs
     /// for the whole session and the orchestrator watches for it separately.
-    func startClient(steamExe: URL)
+    func startClient(steamExe: URL, offline: Bool)
 
     /// Applies Steam's launcher fixes to the bottle. Only called when
     /// ``SteamClientOrchestrator/shouldApplyLauncherFixes(settings:)`` says so.
     func applyLauncherFixes()
 
     /// Hands `-applaunch` for the game to the running client.
-    func launchGame(_ game: SteamGame) throws
+    func launchGame(_ game: SteamGame, offline: Bool) throws
 
     /// Asks one of the bottle's processes to close.
     func killProcess(winePID: Int32) async
@@ -114,10 +114,11 @@ open class WineSteamClientDriver: SteamClientDriver {
     }
 
     /// `steam.exe -silent` runs for the whole session, so the run is never awaited.
-    open func startClient(steamExe: URL) {
+    open func startClient(steamExe: URL, offline: Bool) {
         let bottle = self.bottle
         Task {
-            _ = try? await Wine.runProgram(at: steamExe, args: ["-silent"], bottle: bottle)
+            let arguments = offline ? ["-offline", "-silent"] : ["-silent"]
+            _ = try? await Wine.runProgram(at: steamExe, args: arguments, bottle: bottle)
         }
     }
 
@@ -131,8 +132,13 @@ open class WineSteamClientDriver: SteamClientDriver {
     /// overrides, records the bottle for this App ID, and hands `-applaunch`
     /// to the client. The returned task can outlive the game, so it is never
     /// awaited. The install URL is already known, which saves a library rescan.
-    open func launchGame(_ game: SteamGame) throws {
-        _ = try SteamLauncher.launch(appId: game.appId, bottle: bottle, installURL: game.installURL)
+    open func launchGame(_ game: SteamGame, offline: Bool) throws {
+        _ = try SteamLauncher.launch(
+            appId: game.appId,
+            bottle: bottle,
+            installURL: game.installURL,
+            offline: offline
+        )
     }
 
     open func killProcess(winePID: Int32) async {
