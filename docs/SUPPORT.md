@@ -2,7 +2,7 @@
 
 OpenBottle is an early open-source project. Before reporting a problem, use the
 in-app preflight check, retry with the conservative profile, and export the
-scrubbed diagnostic report if the launch still fails.
+game's compatibility report from its library menu if the launch still fails.
 
 - app bug: [bug report](https://github.com/EwoudVV/OpenBottle/issues/new/choose)
 - game result: [compatibility report](https://github.com/EwoudVV/OpenBottle/issues/new/choose)

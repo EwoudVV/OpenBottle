@@ -1,6 +1,6 @@
 # Runtime dependencies
 
-Whisky's app code is built from this repo, but the **Wine runtime** it downloads on first launch
+OpenBottle's app code is built from this repo, but the **Wine runtime** it downloads on first launch
 (`Libraries.tar.gz`) is assembled from third-party binaries. This file is the single source of truth
 for *what versions are bundled* and *where they come from*, so the runtime can't silently go stale and
 any future maintainer can reproduce a build. Update it whenever a runtime release is cut.

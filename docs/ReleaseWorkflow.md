@@ -2,10 +2,10 @@
 
 OpenBottle has two separate artifact streams:
 
-- app releases use tags such as `app-v0.1.0` and contain
-  `OpenBottle-0.1.0.dmg`;
-- the first alpha consumes the declared upstream Whisky runtime while the
-  versioned OpenBottle runtime manifest and slot installer are being proven.
+- app releases use tags such as `app-v0.1.0-alpha.1` and contain matching DMG,
+  ZIP, and SHA-256 files;
+- the first alpha consumes the declared upstream runtime archive and installs
+  it into a verified OpenBottle slot with its own manifest.
 
 ## preview
 
@@ -17,12 +17,12 @@ preview does not claim Developer ID signing or notarization.
 Run it with:
 
 ```sh
-gh workflow run Preview.yml
+gh workflow run Preview.yml -f label=0.1.0-alpha.1
 ```
 
 Download the finished artifact from that workflow run. For a public test build,
-create a GitHub prerelease whose notes state that it is unsigned and attach the
-same DMG and checksum.
+create a GitHub prerelease whose notes state that it is ad-hoc signed and not
+notarized, then attach the same DMG, ZIP, and checksum.
 
 ## signed release
 

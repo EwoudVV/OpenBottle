@@ -1,8 +1,8 @@
 # roadmap
 
-this is the order of work, with rough focused-development estimates. upstream
-runtime work and game regressions can move the dates, but they do not change the
-order. the architecture and compatibility boundary are in
+this is the order of work. the first alpha implementation is complete in source;
+the unchecked items are the evidence and distribution work between that alpha
+and a beta. the architecture and compatibility boundary are in
 [PRODUCT-PLAN.md](PRODUCT-PLAN.md).
 
 ## completed proof
@@ -29,28 +29,28 @@ or map loading is deferred unless a change to the shared runtime regresses it.
 - [x] restore verified snapshots while keeping the replaced save as a rollback point
 - [x] recover interrupted launch and save work when the library opens
 - [x] show verified restore points in the library and retain the newest ten
-- [ ] create one `LaunchTransaction` used by the library, CLI, shortcuts, Steam,
+- [x] create one `LaunchTransaction` used by the library, CLI, shortcuts, Steam,
       and dragged files
-- [ ] snapshot renderer DLLs, settings, and the known save set before launch
-- [ ] apply a resolved profile only for that launch
-- [ ] restore temporary configuration after exit, interruption, or failed startup
-- [ ] add a per-game local/cloud save choice and show its current state beside Play
-- [ ] keep at least one verified local restore point for every launched game
-- [ ] show one plain launch result with a useful next action
+- [x] snapshot renderer DLLs, settings, and the known save set before launch
+- [x] apply a resolved profile only for that launch
+- [x] restore temporary configuration after exit, interruption, or failed startup
+- [x] add a per-game local/cloud save choice and show its current state beside Play
+- [x] keep at least one verified local restore point for every launched game
+- [x] show one plain launch result with a useful next action
 
 exit: a supported Steam game and a standalone EXE both launch without manual
 bottle or renderer work, and a failed launch can be rolled back from the game page.
 
 ## weeks 4–5: make it OpenBottle
 
-- [ ] rename the app, targets, bundle identifiers, command, URL scheme, and visible
+- [x] rename the app, targets, bundle identifiers, command, URL scheme, and visible
       strings
-- [ ] replace inherited update, release, documentation, Homebrew, telemetry, and
+- [x] replace inherited update, release, documentation, Homebrew, telemetry, and
       support endpoints
-- [ ] add a read-only discovery screen for existing Whisky bottles
-- [ ] keep migration explicit and preserve the original bottle until the imported
+- [x] add a read-only discovery screen for existing Whisky bottles
+- [x] keep migration explicit and preserve the original bottle until the imported
       copy launches successfully
-- [ ] make the library the end of setup instead of asking a new user to understand
+- [x] make the library the end of setup instead of asking a new user to understand
       bottles
 - [ ] produce the first local OpenBottle build and migration smoke test
 
@@ -59,28 +59,28 @@ changing them, and can be removed without affecting Whisky.
 
 ## weeks 6–9: runtime and profile engine
 
-- [ ] replace the single mutable runtime with immutable Stable and Preview slots
-- [ ] pin a known-good runtime per game and retain it across updates
-- [ ] publish a reproducible manifest with hashes, licenses, sources, and declared
+- [x] replace the single mutable runtime with immutable Stable and Preview slots
+- [x] pin a known-good runtime per game and retain it across updates
+- [x] publish a reproducible manifest with hashes, licenses, sources, and declared
       capabilities for every runtime component
-- [ ] detect executable architecture, Direct3D generation, launcher, dependencies,
+- [x] detect executable architecture, Direct3D generation, launcher, dependencies,
       and known anti-cheat before launch
-- [ ] add per-variant Mac model, GPU family, memory, display, refresh rate, macOS,
+- [x] add per-variant Mac model, GPU family, memory, display, refresh rate, macOS,
       and runtime constraints
-- [ ] choose a conservative generated profile when the GameDB has no exact match
-- [ ] add one-click runtime and profile rollback
+- [x] choose a conservative generated profile when the GameDB has no exact match
+- [x] expose one-click runtime rollback and restore temporary profiles after launch
 
 exit: updating OpenBottle or its runtime cannot remove the last known working
 configuration for an installed game.
 
 ## weeks 10–14: multi-game beta
 
-- [ ] add the standalone installer adapter and a default per-game bottle flow
+- [x] add the standalone installer adapter and a default Games bottle flow
 - [ ] add GOG import, then connect Epic, EA, Ubisoft, Rockstar, and Battle.net to
       the shared launch transaction
 - [ ] build the engine and launcher test matrix from `PRODUCT-PLAN.md`
 - [ ] run the matrix on at least two Apple silicon generations
-- [ ] add a scrubbed, opt-in compatibility report export
+- [x] add a scrubbed, opt-in compatibility report export
 - [ ] accept versioned community profiles with reviewable provenance
 - [ ] detect stale profiles after game, runtime, renderer, or macOS updates
 - [ ] publish an alpha, then promote it only after migration and rollback tests pass

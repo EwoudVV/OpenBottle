@@ -39,6 +39,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   initializer from WhiskyKit's public API, along with the `isClickOnce`
   property, so the kit needs a major version bump (#215).
 
+## [0.1.0-alpha.1] - 2026-09-06 (App)
+
+### Added
+- A separate OpenBottle app identity, icon, data container, URL scheme,
+  `openbottle` command, GitHub endpoints, and copy-only importer for existing
+  Whisky bottles.
+- A library-first setup that installs one verified runtime, creates a `Games`
+  bottle, runs EXE/MSI/MSIX/AppX installers, and adds the likely installed
+  program to the library.
+- One launch transaction for library cards, Steam, standalone programs,
+  shortcuts, Finder opens, dragged files, URLs, and the CLI.
+- Verified save restore points before and after play, interrupted-launch
+  recovery, reversible renderer changes, a per-bottle launch lease, and a
+  local-only Steam Cloud policy by default.
+- Immutable Stable and Preview runtime slots with manifests, component hashes,
+  rollback, and per-game known-good runtime pins.
+- Hardware-aware profiles and preflight checks for missing runtime/Rosetta,
+  Windows ARM64, known kernel anti-cheat, unsupported games, DRM, and unavailable
+  renderers.
+- An explicitly exported compatibility JSON with hardware, runtime, profile,
+  preflight, save policy, and result data. it excludes paths, save contents,
+  accounts, tokens, and raw logs.
+- The measured Screw Drivers M1 Max profile: DXMT, MetalFX 2x, and a 120 FPS cap,
+  restricted to the tested hardware and display.
+
+### Changed
+- OpenBottle has no telemetry endpoint or inherited analytics consent flow.
+- The app version now starts at `0.1.0`; the first public build is an ad-hoc
+  signed, unnotarized alpha.
+
+### Fixed
+- The M1 Max-only Screw Drivers constraints now belong to its DXMT profile, so
+  unknown Macs correctly choose the conservative DXVK fallback.
+- Steam launch integration tests use a complete fake runtime and exercise the
+  real preflight path.
+
 ## [3.7.0] - 2026-08-29 (App)
 
 ### Added
@@ -874,6 +910,7 @@ When adding entries to this changelog, use the following categories:
 - **Security** - Vulnerability fixes
 - **Documentation** - Documentation-only changes
 
-[Unreleased]: https://github.com/frankea/Whisky/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/EwoudVV/OpenBottle/compare/app-v0.1.0-alpha.1...HEAD
+[0.1.0-alpha.1]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.1
 [3.0.0]: https://github.com/frankea/Whisky/releases/tag/v3.0.0
 [2.5.0]: https://github.com/frankea/Whisky/releases/tag/v2.5.0

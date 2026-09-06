@@ -86,62 +86,64 @@ transaction should:
 
 ## what already exists
 
-- a native SwiftUI library and first-run runtime setup;
-- Wine bottle creation, migration, import, duplication, and cleanup;
-- Steam game discovery and App ID launch routing;
-- pinned standalone programs and macOS shortcuts;
-- a GameDB with variants, provenance, known issues, and tested versions;
-- per-program renderer and environment resolution;
-- DXMT, DXVK, wined3d, and optional D3DMetal selection;
-- launcher detection for Steam, Epic, EA, Ubisoft, Rockstar, and Battle.net;
-- dependency installation, run logs, crash classification, and diagnostics;
-- an atomic per-bottle save vault with verified restore, rollback, retention,
-  and durable startup recovery, wired into Steam library launches;
-- CI for the package, every Xcode scheme, resources, and UI tests.
+- a standalone native SwiftUI app with its own identity, storage, command, URL
+  scheme, endpoints, icon, and copy-only Whisky bottle import;
+- first-run Rosetta/runtime setup followed by an automatic `Games` bottle and
+  a library-first home screen;
+- standalone EXE/MSI/MSIX/AppX install, post-install program discovery, Steam
+  game discovery, App ID routing, pinned programs, and macOS shortcuts;
+- one shared launch transaction for the library, CLI, shortcuts, Steam, dragged
+  files, Finder opens, and `openbottle://` links;
+- verified save snapshots before and after launch, durable recovery, restore
+  rollback, retention, broad path discovery, and a visible per-game local/cloud
+  policy whose default is local-only;
+- reversible renderer/configuration changes protected by a cross-process
+  per-bottle launch lease;
+- immutable Stable and Preview runtime slots with hashes, component versions,
+  licenses, capabilities, rollback, and per-game known-good pins;
+- hardware-aware GameDB variants with a conservative fallback for unknown Macs;
+- preflight detection for missing runtime/Rosetta, Windows ARM64, known kernel
+  anti-cheat drivers, declared unsupported games, user-space anti-cheat, and DRM;
+- local, opt-in compatibility JSON containing the selected runtime/profile and
+  scrubbed result without paths, accounts, saves, tokens, or raw logs;
+- CI for the package, every Xcode scheme, resources, UI tests, localization,
+  formatting, lint, identity, documentation, and secret scanning.
 
 ## what is missing
 
-### one product identity
+### prove more than one game and one Mac
 
-rename the app, targets, bundle identifiers, URL scheme, update feed, support
-links, runtime endpoints, and command-line tool. import existing Whisky bottles
-read-only first, then copy or adopt them only when the user chooses.
+Screw Drivers proves the transaction and profile ideas, but it is not a release
+matrix. the next evidence has to cover the APIs, engines, stores, media, input,
+failure cases, and two Apple silicon generations listed below.
 
-### versioned runtime slots
+### finish store adapters
 
-the current installer replaces one global runtime. OpenBottle needs immutable
-Stable, Preview, and per-game pinned slots. every slot needs a manifest with
-versions, hashes, licenses, capabilities, and its source. an update must never
-remove the last runtime that launched a game successfully.
+Steam and standalone installers use the shared path. GOG import comes next,
+followed by Epic, EA, Ubisoft, Rockstar, and Battle.net. their clients are
+already detected, but detection is not the same as a complete install, library,
+update, launch, and sign-out adapter.
 
-### finish save discovery and cloud policy
+### turn reports into reviewed profiles
 
-Steam library launches now capture declared GameDB paths before Play reaches
-Steam, and the library can restore them without discarding the current save. the
-vault still needs broad save discovery and visible Steam Cloud policy. cloud
-access should be an explicit game setting rather than an invisible side effect
-of Play.
+the export exists and stays local. the project still needs a versioned review
+process that can turn an inspected community report into a GameDB variant,
+invalidate it after relevant game/runtime/macOS changes, and show the evidence
+behind a compatibility claim.
 
-### hardware-aware profiles
+### normal signed distribution
 
-profiles currently match the game but do not express enough about the machine.
-selection needs the Mac model and GPU family, memory, display size and refresh
-rate, macOS build, Wine build, renderer capabilities, executable version, and
-launcher. an unknown machine gets a conservative default instead of somebody
-else's fastest setting.
+the first preview is ad-hoc signed. beta and 1.0 need a Developer ID, Apple
+notarization, a reproducible release archive, a new OpenBottle Sparkle signing
+key, and an update rollback drill. no upstream identity or signing material can
+be reused.
 
-### install and store adapters
+### the open D3D12 and post-Rosetta paths
 
-Steam is the first adapter. standalone EXE/MSI installers come next, followed by
-GOG and the launchers the code already recognizes. every adapter should produce
-the same library entry and launch target instead of adding its own run path.
-
-### compatibility reports
-
-reports stay local until the user chooses to share one. a report should contain
-versions, hardware class, selected profile, launch result, timings, and scrubbed
-error signatures. it should never include account names, save contents, home
-paths, tokens, or raw launcher logs.
+D3D12 still depends on an optional user-supplied Apple payload for the useful
+path today. a fully open D3D12 route and a verified replacement for
+general-purpose Rosetta after macOS 27 remain runtime research, measured against
+the same matrix instead of promised ahead of evidence.
 
 ## release test matrix
 

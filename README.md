@@ -1,100 +1,125 @@
 # OpenBottle
 
-i'm building a free, open-source way to run Windows games on Apple silicon Macs.
-the goal is to make each game choose a measured working setup instead of making
-people guess between Wine versions, graphics backends, sync modes, and random
-launch flags.
+i'm building a free, open-source macOS app for running Windows games. the point
+is to install a game, see it in a library, and press Play without guessing which
+Wine build, graphics backend, sync mode, resolution trick, or launch flag it
+needs.
 
-OpenBottle starts from [frankea/Whisky](https://github.com/frankea/Whisky). that
-already gives it a native SwiftUI app, Wine bottle management, Steam support,
-DXVK, DXMT, and diagnostics. this fork is focused on the part i care about next:
-measuring real games, keeping the fast configurations, and making the result easy
-to reproduce.
+OpenBottle started from
+[frankea/Whisky](https://github.com/frankea/Whisky), but it is now its own app.
+it has its own name, icon, bundle IDs, URL scheme, command, update endpoints,
+and data folder. installing it does not replace Whisky or change Whisky's
+bottles. an old bottle is only copied when its owner chooses to import it.
 
-## status
+## what the user opens
 
-checked 6 september 2026. the first proof is complete: one real game has a
-repeatable sharp configuration, a protected local save, and a reversible launch.
-OpenBottle now has its own app, command, URL scheme, storage, update endpoints,
-and explicit copy-based migration from existing Whisky bottles.
+OpenBottle is a normal native Mac app. the SwiftUI library is the main
+experience; the `openbottle` command is a secondary tool for scripts and
+shortcuts. it is not a Whisky plugin and it does not require the user to start
+from a terminal.
 
-the first target is [Screw Drivers](https://store.steampowered.com/app/1279510/Screw_Drivers/)
-on an M1 Max MacBook Pro. full-resolution rendering was too slow and the lower
-working resolution looked soft. DXMT and MetalFX now render at 1728x1117 and
-reconstruct the result to the panel's 3456x2234 pixel grid.
+on a fresh Mac:
 
-| mode | average game CPU | main menu ready |
-| --- | ---: | ---: |
-| DXVK | 111.6% | 44 s |
-| DXMT | 320.4% | 42 s |
-| DXVK, 60 FPS cap | 115.6% | 44 s |
-| DXMT, 60 FPS cap | 157.7% | 43 s |
+1. open OpenBottle and follow the setup for Rosetta and the verified Stable
+   runtime;
+2. OpenBottle creates one hidden-by-default `Games` bottle;
+3. click **Install a Windows game…** and choose an EXE, MSI, MSIX, or AppX
+   installer;
+4. finish the Windows installer normally;
+5. OpenBottle finds the newly installed program and adds it to the library;
+6. press the game card to play.
 
-macOS reports 100% CPU as roughly one fully occupied core. these numbers come
-from 60-second main-menu samples at 1728x1117. a later 21-minute MetalFX play
-session completed four races and averaged 210.2% game CPU. it looked close to a
-native-resolution run. a later direct comparison found that a 120 FPS cap felt
-noticeably more responsive than 60 FPS, with average game CPU rising from 206.5%
-to 238.3% across those short runs. the full method and limits are in
-[the benchmark record](docs/benchmarks/screw-drivers-2026-09-05.md).
+Steam games installed in the `Games` bottle appear in the same library.
+dragged executables, Finder opens, Dock shortcuts, `openbottle://` links,
+Steam App IDs, and CLI launches all enter the same safe launch path.
 
-## first proof
+## what Play does
 
-the winning tested setup on this M1 Max is DXMT, MetalFX 2x, and a 120 FPS cap.
-it renders at 1728x1117 and reconstructs to the built-in display's 3456x2234
-pixel grid. Steam runs with sync disabled and the launcher verifies its temporary
-renderer changes and local save state.
+before a game starts, OpenBottle:
 
-the reversible launcher, the lower-latency 120 FPS comparison, and the things to
-check are in
-[experiments/screw-drivers](experiments/screw-drivers/README.md).
-the current experiment is local-save only: it refuses to start unless Steam Cloud
-is disabled for Screw Drivers, and it starts that Steam session offline.
+1. identifies the game, launcher, executable, Mac hardware, and available
+   runtime;
+2. refuses known hard blockers such as Windows ARM executables and detected
+   kernel anti-cheat drivers with a plain reason;
+3. creates a verified local restore point for known and discovered save
+   folders;
+4. snapshots renderer DLLs and the settings it is about to change;
+5. selects a tested hardware-specific profile when one fits, or a conservative
+   DXVK profile when the machine is unknown;
+6. runs the game with that runtime and profile;
+7. restores temporary renderer changes after exit and keeps the new save plus
+   its rollback point;
+8. pins the runtime after a successful launch so an update cannot silently
+   remove the last working engine.
 
-## project direction
+Stable and Preview runtimes live in separate verified slots. each slot records
+the archive hash, component hashes, versions, licenses, source links, and
+capabilities. the runtime menu can switch the default without deleting the
+previous one.
 
-the next milestone is the product rather than another Screw Drivers tweak:
+Steam Cloud is **off by default for each game**. choosing local-only starts
+Steam offline and leaves OpenBottle's verified local restore points
+authoritative. cloud access can be enabled per game from its library menu.
 
-1. send every game, installer, shortcut, and store through one safe Play
-   transaction;
-2. add automatic local save restore points and an explicit cloud policy;
-3. keep OpenBottle separate from Whisky and only copy an old bottle when its
-   owner asks;
-4. keep versioned runtime slots and select hardware-aware profiles;
-5. test different engines, Direct3D generations, launchers, input, audio, video,
-   and failure classes;
-6. publish a signed alpha whose normal flow is install, choose a game, and press
-   Play.
+OpenBottle has no telemetry endpoint. a compatibility report is only created
+when the user chooses **Export compatibility report…**. its JSON contains the
+Mac class, component versions, selected profile, preflight result, save policy,
+and last transaction timing/result. it excludes bottle and save paths, save
+contents, account details, tokens, launch arguments, environment values, and
+raw logs so it can be reviewed before sharing.
 
-the full architecture and compatibility boundary are in
-[docs/PRODUCT-PLAN.md](docs/PRODUCT-PLAN.md). the ordered work is in
-[docs/ROADMAP.md](docs/ROADMAP.md).
+## current proof
 
-## stack and licensing
+the first measured game is
+[Screw Drivers](https://store.steampowered.com/app/1279510/Screw_Drivers/) on a
+64 GB M1 Max MacBook Pro with a 3456x2234 120 Hz display. the selected profile
+renders at 1728x1117 through DXMT, reconstructs it at 2x with MetalFX, and uses a
+120 FPS cap. a 21-minute play session completed four races and looked close to a
+native-resolution run. a later comparison found the 120 FPS version noticeably
+more responsive than 60 FPS.
 
-OpenBottle's redistributable path uses Wine, DXMT, DXVK, and MoltenVK. the app
-code remains under GPL-3.0 because it is derived from Whisky. Apple's D3DMetal is
-proprietary and will stay an optional user-supplied component with its own license;
-it is not part of the fully open runtime path.
+that exact profile is restricted to the tested Mac, memory, display, and refresh
+rate. other machines get the conservative DXVK setup. the measurements and
+limits are in
+[docs/benchmarks/screw-drivers-2026-09-05.md](docs/benchmarks/screw-drivers-2026-09-05.md).
 
-the upstream project and the people maintaining Wine, DXMT, DXVK, MoltenVK, and
-the macOS Wine builds are doing the hard compatibility work underneath this app.
-OpenBottle will keep an `upstream` Git remote and should send generally useful
-fixes back when they fit there.
+## honest compatibility boundary
+
+OpenBottle can make technically reachable games much easier, but it cannot make
+every Windows game work:
+
+| game or app | current route |
+| --- | --- |
+| Direct3D 8–11 without kernel dependencies | Wine with DXMT, DXVK, or WineD3D |
+| Direct3D 12 | optional user-supplied Apple D3DMetal while open paths are evaluated |
+| supported user-space anti-cheat | test per game and explain the risk |
+| Windows kernel anti-cheat, kernel drivers, or incompatible DRM | detect and block with a reason |
+| Windows ARM64 executable | ask for the x64 or x86 build |
+
+Apple's D3DMetal is proprietary, so it is never bundled in the fully open
+runtime. the redistributable path uses Wine, DXMT, DXVK, and MoltenVK. the app
+code remains GPL-3.0 because it is derived from Whisky.
+
+this first alpha is ad-hoc signed for testing and is not notarized. the wider
+release matrix still needs more games, launchers, graphics APIs, controllers,
+audio/video paths, and at least two Apple silicon generations before the project
+can call itself a beta.
 
 ## build
 
 open `OpenBottle.xcodeproj` in Xcode and build the `OpenBottle` scheme. with a
-full Xcode toolchain, run the core test suite with:
+full Xcode toolchain:
 
 ```sh
 swift test --package-path WhiskyKit
 ```
 
-preview builds are published as GitHub prereleases while the signing and wider
-game matrix are still in progress.
+preview builds are on the
+[GitHub releases page](https://github.com/EwoudVV/OpenBottle/releases). the
+ordered work and release gates are in [docs/ROADMAP.md](docs/ROADMAP.md), and
+the architecture is in [docs/PRODUCT-PLAN.md](docs/PRODUCT-PLAN.md).
 
 ## license
 
-OpenBottle is available under [GPL-3.0](LICENSE). the bundled runtime components
+OpenBottle is available under [GPL-3.0](LICENSE). bundled runtime components
 keep their own licenses; see [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md).
