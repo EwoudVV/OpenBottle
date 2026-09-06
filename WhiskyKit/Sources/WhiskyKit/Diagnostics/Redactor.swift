@@ -41,10 +41,10 @@ public enum Redactor {
     /// are removed during environment redaction.
     public static let sensitiveKeyPatterns = ["TOKEN", "KEY", "SECRET", "PASSWORD", "AUTH"]
 
-    /// Replaces the current user's home directory path with a redacted placeholder.
+    /// Replaces Unix and Windows user-profile paths with redacted placeholders.
     ///
-    /// Detects the actual home directory at runtime and replaces all occurrences
-    /// of `/Users/<username>` with `/Users/<redacted>`.
+    /// Detects the current home directory and also catches other `/Users/name`,
+    /// `/home/name`, and `C:\\Users\\name` forms that can appear in Wine logs.
     ///
     /// - Parameter text: The text to redact.
     /// - Returns: The text with home paths replaced.
@@ -52,8 +52,23 @@ public enum Redactor {
         let homePath = FileManager.default.homeDirectoryForCurrentUser.path(percentEncoded: false)
         // Remove trailing slash if present for consistent matching
         let normalizedHome = homePath.hasSuffix("/") ? String(homePath.dropLast()) : homePath
-        guard !normalizedHome.isEmpty else { return text }
-        return text.replacingOccurrences(of: normalizedHome, with: "/Users/<redacted>")
+        var result = text
+        if !normalizedHome.isEmpty {
+            result = result.replacingOccurrences(of: normalizedHome, with: "/Users/<redacted>")
+        }
+        let patterns = [
+            (#"(/Users/)[^/\s\"'<>]+"#, "$1<redacted>"),
+            (#"(/home/)[^/\s\"'<>]+"#, "$1<redacted>"),
+            (#"([A-Za-z]:[\\/]+Users[\\/]+)[^\\/\s\"'<>]+"#, "$1<redacted>")
+        ]
+        for (pattern, replacement) in patterns {
+            result = result.replacingOccurrences(
+                of: pattern,
+                with: replacement,
+                options: [.regularExpression, .caseInsensitive]
+            )
+        }
+        return result
     }
 
     /// Redacts an environment variable dictionary for safe export.

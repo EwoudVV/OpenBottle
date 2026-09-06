@@ -71,8 +71,10 @@ final class LaunchTransactionTests: XCTestCase {
         XCTAssertEqual(completed.stage, .completed)
         XCTAssertEqual(completed.saveSnapshotID, "snapshot-1")
         let persisted = try await journal.record(for: identifier)
+        let history = try await journal.records()
         let unfinished = try await journal.unfinished()
         XCTAssertEqual(persisted, completed)
+        XCTAssertEqual(history, [completed])
         XCTAssertTrue(unfinished.isEmpty)
 
         let recordURL = fixture

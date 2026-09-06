@@ -25,6 +25,7 @@ public struct ProgramLaunchPlan: Sendable {
     public let launchPlan: LaunchPlan
     public let processNames: Set<String>
     public let entry: GameDBEntry?
+    public let variant: GameConfigVariant?
     public let installURL: URL
 
     public init(
@@ -33,6 +34,7 @@ public struct ProgramLaunchPlan: Sendable {
         launchPlan: LaunchPlan,
         processNames: Set<String>,
         entry: GameDBEntry?,
+        variant: GameConfigVariant? = nil,
         installURL: URL
     ) {
         self.gameID = gameID
@@ -40,6 +42,7 @@ public struct ProgramLaunchPlan: Sendable {
         self.launchPlan = launchPlan
         self.processNames = processNames
         self.entry = entry
+        self.variant = variant
         self.installURL = installURL
     }
 }
@@ -80,6 +83,10 @@ public enum ProgramLaunchPlanner {
         if ["msi", "msix", "appx"].contains(programURL.pathExtension.lowercased()) {
             processNames.insert("msiexec.exe")
         }
+        let appliedVariant = appliedConfiguration.flatMap { selection -> GameConfigVariant? in
+            guard selection.appliedEntryId == match?.entry.id else { return nil }
+            return match?.entry.variants.first { $0.id == selection.appliedVariantId }
+        }
         return ProgramLaunchPlan(
             gameID: gameID,
             saveSources: GameSaveDiscovery.merging(
@@ -94,6 +101,7 @@ public enum ProgramLaunchPlanner {
             ),
             processNames: processNames,
             entry: match?.entry,
+            variant: appliedVariant ?? match?.recommendedVariant,
             installURL: programURL.deletingLastPathComponent()
         )
     }

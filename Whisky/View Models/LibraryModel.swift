@@ -61,6 +61,7 @@ final class LibraryModel: ObservableObject {
     @Published private(set) var rows: [LibraryRow] = []
     @Published var launchError: String?
     @Published var saveError: String?
+    @Published var reportError: String?
     @Published var toast: ToastData?
     @Published var restoreSheet: LibraryRestoreSheet?
 

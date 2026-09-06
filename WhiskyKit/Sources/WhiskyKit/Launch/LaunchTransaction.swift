@@ -281,6 +281,11 @@ public actor LaunchTransactionJournal {
 
     /// Returns every transaction that still needs monitoring or cleanup.
     public func unfinished() throws -> [LaunchTransactionRecord] {
+        try records().filter { !$0.stage.isTerminal }
+    }
+
+    /// Returns the path-free launch history for local reports.
+    public func records() throws -> [LaunchTransactionRecord] {
         let manager = FileManager.default
         guard manager.fileExists(atPath: rootURL.path(percentEncoded: false)) else {
             return []
@@ -298,7 +303,6 @@ public actor LaunchTransactionJournal {
                 }
                 return try load(identifier)
             }
-            .filter { !$0.stage.isTerminal }
             .sorted { lhs, rhs in
                 if lhs.createdAt != rhs.createdAt {
                     return lhs.createdAt < rhs.createdAt

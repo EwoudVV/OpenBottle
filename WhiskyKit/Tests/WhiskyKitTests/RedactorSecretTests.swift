@@ -82,6 +82,13 @@ struct RedactorSecretTests {
         #expect(out.hasSuffix("--token <redacted>"))
     }
 
+    @Test("Unix and Wine user-profile paths redact any account name")
+    func allUserPaths() {
+        let text = #"/Users/alice/a /home/bob/b C:\Users\Carol\c D:/Users/Dave/d"#
+        let out = Redactor.redactLogText(text)
+        #expect(out == #"/Users/<redacted>/a /home/<redacted>/b C:\Users\<redacted>\c D:/Users/<redacted>/d"#)
+    }
+
     @Test("Program arguments are scrubbed unless sensitive details are included")
     @MainActor func programSummaryGating() throws {
         let dir = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)

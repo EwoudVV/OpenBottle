@@ -116,6 +116,17 @@ struct LibraryView: View {
         } message: {
             Text(model.saveError ?? "")
         }
+        .alert(
+            "Couldn’t export compatibility report",
+            isPresented: Binding(
+                get: { model.reportError != nil },
+                set: { if !$0 { model.reportError = nil } }
+            )
+        ) {
+            Button("button.ok") { model.reportError = nil }
+        } message: {
+            Text(model.reportError ?? "")
+        }
     }
 
     private var sortMenu: some ToolbarContent {
@@ -181,6 +192,11 @@ struct LibraryView: View {
                 Label("library.saves.policy", systemImage: "externaldrive.badge.icloud")
             }
             .disabled(model.state(for: row.item) != .idle)
+        }
+        Button {
+            Task { await model.exportCompatibilityReport(for: row, bottles: bottles) }
+        } label: {
+            Label("Export compatibility report…", systemImage: "doc.badge.arrow.up")
         }
         Divider()
         if case let .program(url) = row.item.launch {
