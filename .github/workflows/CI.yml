@@ -129,6 +129,9 @@ jobs:
         with:
           xcode-version: ${{ env.XCODE_VERSION }}
 
+      - name: Check generated app icon
+        run: ./scripts/render-app-icon.py --check
+
       # Cache includes WhiskyKit/.build for consistency with test job cache paths
       # (swift build creates artifacts there, xcodebuild uses DerivedData)
       - name: Cache SPM Dependencies

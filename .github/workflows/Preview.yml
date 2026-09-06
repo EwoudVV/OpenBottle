@@ -6,7 +6,7 @@ on:
       label:
         description: Preview label used in artifact filenames
         required: true
-        default: 0.1.0-alpha.1
+        default: 0.1.0-alpha.2
 
 permissions:
   contents: read
@@ -30,6 +30,7 @@ jobs:
         run: |
           ./scripts/openbottle-identity.py --check
           ./scripts/british-english.py --check
+          ./scripts/render-app-icon.py --check
 
       - name: Build unsigned Release app
         run: |
@@ -53,6 +54,7 @@ jobs:
           test -d "$app"
           test "$(defaults read "$(pwd)/$app/Contents/Info" CFBundleIdentifier)" = "io.github.ewoudvv.OpenBottle"
           test "$(defaults read "$(pwd)/$app/Contents/Info" CFBundleShortVersionString)" = "0.1.0"
+          test "$(defaults read "$(pwd)/$app/Contents/Info" CFBundleVersion)" = "2"
           for resource in OpenBottleCmd winetricks verbs.txt cabextract; do
             test -f "$app/Contents/Resources/$resource"
           done

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#263746"/>
+      <stop offset="1" stop-color="#111b24"/>
+    </linearGradient>
+    <clipPath id="iconClip">
+      <rect x="56" y="56" width="912" height="912" rx="210"/>
+    </clipPath>
+    <clipPath id="bottleClip">
+      <path d="M415 275h194v110c0 38 23 66 76 93 61 31 96 82 96 150v142c0 75-61 136-136 136H379c-75 0-136-61-136-136V628c0-68 35-119 96-150 53-27 76-55 76-93Z"/>
+    </clipPath>
+  </defs>
+  <rect x="56" y="56" width="912" height="912" rx="210" fill="url(#bg)"/>
+  <path d="M56 785 352 489c122-122 250-177 410-249l206-92v820H56Z" fill="#16414a" opacity=".32" clip-path="url(#iconClip)"/>
+  <path d="M415 275h194v110c0 38 23 66 76 93 61 31 96 82 96 150v142c0 75-61 136-136 136H379c-75 0-136-61-136-136V628c0-68 35-119 96-150 53-27 76-55 76-93Z" fill="#61c7b2" stroke="#12343b" stroke-width="28" stroke-linejoin="round"/>
+  <rect x="512" y="250" width="310" height="680" fill="#3b958a" opacity=".56" clip-path="url(#bottleClip)"/>
+  <rect x="329" y="547" width="366" height="224" rx="58" fill="#f3eee2"/>
+  <path d="M470 592v134l119-67Z" fill="#18343c"/>
+  <rect x="398" y="243" width="228" height="48" rx="24" fill="#12343b"/>
+  <g transform="rotate(7 565 198)">
+    <rect x="464" y="154" width="202" height="82" rx="29" fill="#f0a158" stroke="#12343b" stroke-width="24"/>
+    <path d="M492 207h145" stroke="#da8245" stroke-width="11" stroke-linecap="round"/>
+  </g>
+</svg>

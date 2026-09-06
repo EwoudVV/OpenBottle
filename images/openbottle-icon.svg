@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#263746"/>
+      <stop offset="1" stop-color="#111b24"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="170%" height="180%">
+      <feDropShadow dx="0" dy="22" stdDeviation="17" flood-color="#061016" flood-opacity=".44"/>
+    </filter>
+    <clipPath id="iconClip">
+      <rect x="56" y="56" width="912" height="912" rx="210"/>
+    </clipPath>
+    <clipPath id="bottleClip">
+      <path d="M421 281h182v104c0 36 22 63 73 89 59 30 93 80 93 146v147c0 70-57 127-127 127H382c-70 0-127-57-127-127V620c0-66 34-116 93-146 51-26 73-53 73-89Z"/>
+    </clipPath>
+  </defs>
+  <rect x="56" y="56" width="912" height="912" rx="210" fill="url(#bg)"/>
+  <path d="M56 785 352 489c122-122 250-177 410-249l206-92v820H56Z" fill="#16414a" opacity=".32" clip-path="url(#iconClip)"/>
+  <g filter="url(#shadow)">
+    <path d="M421 281h182v104c0 36 22 63 73 89 59 30 93 80 93 146v147c0 70-57 127-127 127H382c-70 0-127-57-127-127V620c0-66 34-116 93-146 51-26 73-53 73-89Z" fill="#61c7b2" stroke="#12343b" stroke-width="20" stroke-linejoin="round"/>
+    <rect x="512" y="260" width="300" height="660" fill="#3b958a" opacity=".54" clip-path="url(#bottleClip)"/>
+    <path d="M365 501c-37 29-54 65-54 118v137c0 42 20 68 55 84" fill="none" stroke="#a8eadc" stroke-width="18" stroke-linecap="round" opacity=".72"/>
+    <rect x="344" y="558" width="336" height="196" rx="52" fill="#f3eee2"/>
+    <path d="M478 600v112l100-56Z" fill="#18343c"/>
+    <rect x="407" y="252" width="210" height="38" rx="19" fill="#12343b"/>
+    <g transform="rotate(7 565 200)">
+      <rect x="470" y="164" width="190" height="72" rx="27" fill="#f0a158" stroke="#12343b" stroke-width="16"/>
+      <path d="M494 212h143" stroke="#da8245" stroke-width="9" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg>

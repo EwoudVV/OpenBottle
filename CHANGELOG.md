@@ -39,6 +39,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   initializer from WhiskyKit's public API, along with the `isClickOnce`
   property, so the kit needs a major version bump (#215).
 
+## [0.1.0-alpha.2] - 2026-09-06 (App)
+
+### Changed
+- Replaced the generated neon bottle artwork with a hand-drawn geometric icon.
+  the open cap, bottle silhouette, and Play mark use an optical small-size
+  drawing at 16 and 32 px instead of shrinking the large artwork blindly.
+- Added the SVG sources and a reproducible renderer. CI now checks every app
+  and thumbnail PNG against those sources.
+
 ## [0.1.0-alpha.1] - 2026-09-06 (App)
 
 ### Added
@@ -910,7 +919,8 @@ When adding entries to this changelog, use the following categories:
 - **Security** - Vulnerability fixes
 - **Documentation** - Documentation-only changes
 
-[Unreleased]: https://github.com/EwoudVV/OpenBottle/compare/app-v0.1.0-alpha.1...HEAD
+[Unreleased]: https://github.com/EwoudVV/OpenBottle/compare/app-v0.1.0-alpha.2...HEAD
+[0.1.0-alpha.2]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.1
 [3.0.0]: https://github.com/frankea/Whisky/releases/tag/v3.0.0
 [2.5.0]: https://github.com/frankea/Whisky/releases/tag/v2.5.0

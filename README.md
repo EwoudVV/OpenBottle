@@ -1,5 +1,9 @@
 # OpenBottle
 
+<p align="center">
+  <img src="images/openbottle-icon-master.png" width="160" alt="OpenBottle icon">
+</p>
+
 i'm building a free, open-source macOS app for running Windows games. the point
 is to install a game, see it in a library, and press Play without guessing which
 Wine build, graphics backend, sync mode, resolution trick, or launch flag it
