@@ -97,7 +97,7 @@ struct SteamClientOrchestratorProcessTests {
         #expect(driver.listCalls == 2, "the refresh after a kill must not answer from the stale snapshot")
     }
 
-    @Test("Stop cancels an in-flight launch and hands the driver its shutdown")
+    @Test("Stop cancels observation after a cold launch request and shuts the driver down")
     func stopAll() async throws {
         let (bottle, games) = try Fixture.makeBottle()
         let driver = FakeSteamClientDriver(script: [[]])
@@ -111,7 +111,7 @@ struct SteamClientOrchestratorProcessTests {
 
         #expect(driver.shutdownCalls == 1)
         await Fixture.eventually("the cancelled launch should clear its phase") { orchestrator.phases.isEmpty }
-        #expect(driver.launched.isEmpty)
+        #expect(driver.launched == [games[0].appId])
     }
 
     @Test("Tracking reports the games whose executables are running")

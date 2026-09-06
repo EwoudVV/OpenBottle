@@ -62,7 +62,7 @@ struct SteamClientOrchestratorLaunchTests {
         #expect(driver.readyCalls == 1)
     }
 
-    @Test("Concurrent cold launches observe the same combined client start")
+    @Test("Concurrent cold launches each carry their profiled request")
     func singleFlightStartup() async throws {
         let (bottle, games) = try Fixture.makeBottle(games: [1_086_940, 1_245_620])
         let driver = FakeSteamClientDriver(script: [[]])
@@ -76,7 +76,7 @@ struct SteamClientOrchestratorLaunchTests {
         await Fixture.awaitIdle(orchestrator)
 
         #expect(driver.startClientCalls == 0)
-        #expect(driver.readyCalls == 1)
+        #expect(driver.readyCalls == 2)
         #expect(Set(driver.launched) == Set(games.map(\.appId)))
         #expect(orchestrator.launchError == nil)
     }
