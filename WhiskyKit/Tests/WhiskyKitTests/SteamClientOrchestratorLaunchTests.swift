@@ -45,7 +45,6 @@ struct SteamClientOrchestratorLaunchTests {
         let driver = FakeSteamClientDriver(script: [[]])
         let orchestrator = SteamClientOrchestrator(bottle: bottle, driver: driver, timing: Fixture.fast)
         var phaseAtLaunch: SteamClientOrchestrator.Phase?
-        driver.onStartClient = { driver.script = [["steam.exe"]] }
         driver.onLaunchGame = { game in
             phaseAtLaunch = orchestrator.phases[game.appId]
             driver.script = [["steam.exe", "game1.exe"]]
@@ -56,30 +55,27 @@ struct SteamClientOrchestratorLaunchTests {
         await Fixture.awaitIdle(orchestrator)
 
         #expect(orchestrator.launchError == nil)
-        #expect(driver.startClientCalls == 1)
+        #expect(driver.startClientCalls == 0)
         #expect(driver.fixesCalls == 1)
         #expect(driver.launched == [games[0].appId])
         #expect(phaseAtLaunch == .launching)
         #expect(driver.readyCalls == 1)
     }
 
-    @Test("Concurrent launches share one client startup")
+    @Test("Concurrent cold launches observe the same combined client start")
     func singleFlightStartup() async throws {
         let (bottle, games) = try Fixture.makeBottle(games: [1_086_940, 1_245_620])
         let driver = FakeSteamClientDriver(script: [[]])
         let orchestrator = SteamClientOrchestrator(bottle: bottle, driver: driver, timing: Fixture.fast)
-        driver.onStartClient = {
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(30))
-                driver.script = [["steam.exe", "game1.exe", "game2.exe"]]
-            }
+        driver.onLaunchGame = { _ in
+            driver.script = [["steam.exe", "game1.exe", "game2.exe"]]
         }
 
         orchestrator.launch(games[0])
         orchestrator.launch(games[1])
         await Fixture.awaitIdle(orchestrator)
 
-        #expect(driver.startClientCalls == 1)
+        #expect(driver.startClientCalls == 0)
         #expect(driver.readyCalls == 1)
         #expect(Set(driver.launched) == Set(games.map(\.appId)))
         #expect(orchestrator.launchError == nil)
@@ -108,8 +104,8 @@ struct SteamClientOrchestratorLaunchTests {
         await Fixture.awaitIdle(orchestrator)
 
         #expect(orchestrator.launchError == SteamOrchestratorError.clientTimeout.errorDescription)
-        #expect(driver.startClientCalls == 1)
-        #expect(driver.launched.isEmpty)
+        #expect(driver.startClientCalls == 0)
+        #expect(driver.launched == [games[0].appId])
         #expect(driver.readyCalls == 0)
     }
 
@@ -159,13 +155,13 @@ struct SteamClientOrchestratorLaunchTests {
         let (bottle, games) = try Fixture.makeBottle()
         bottle.settings.launcherMode = .manual
         let driver = FakeSteamClientDriver(script: [[]])
-        driver.onStartClient = { driver.script = [["steam.exe", "game1.exe"]] }
+        driver.onLaunchGame = { _ in driver.script = [["steam.exe", "game1.exe"]] }
         let orchestrator = SteamClientOrchestrator(bottle: bottle, driver: driver, timing: Fixture.fast)
 
         orchestrator.launch(games[0])
         await Fixture.awaitIdle(orchestrator)
 
-        #expect(driver.startClientCalls == 1)
+        #expect(driver.startClientCalls == 0)
         #expect(driver.fixesCalls == 0)
     }
 

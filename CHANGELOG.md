@@ -39,6 +39,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   initializer from WhiskyKit's public API, along with the `isClickOnce`
   property, so the kit needs a major version bump (#215).
 
+## [0.1.0-alpha.5] - 2026-09-06 (App)
+
+### Fixed
+- A cold Steam launch now starts with the selected game's environment in the
+  same `-applaunch` process. Steam children therefore inherit profile values
+  such as DXMT MetalFX and its frame cap instead of losing them across a second
+  already-running Steam process.
+
 ## [0.1.0-alpha.4] - 2026-09-06 (App)
 
 ### Fixed
@@ -936,7 +944,8 @@ When adding entries to this changelog, use the following categories:
 - **Security** - Vulnerability fixes
 - **Documentation** - Documentation-only changes
 
-[Unreleased]: https://github.com/EwoudVV/OpenBottle/compare/app-v0.1.0-alpha.4...HEAD
+[Unreleased]: https://github.com/EwoudVV/OpenBottle/compare/app-v0.1.0-alpha.5...HEAD
+[0.1.0-alpha.5]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.5
 [0.1.0-alpha.4]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.4
 [0.1.0-alpha.3]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.3
 [0.1.0-alpha.2]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.2

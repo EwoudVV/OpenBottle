@@ -107,7 +107,7 @@ public final class SteamClientOrchestrator: ObservableObject {
     var processSnapshot: (processes: [WineProcess], taken: Date)?
     var snapshotRead: Task<[WineProcess], Never>?
 
-    private lazy var watch = SteamProcessWatch(pollInterval: timing.pollInterval) { [weak self] in
+    lazy var watch = SteamProcessWatch(pollInterval: timing.pollInterval) { [weak self] in
         await self?.runningImageNames() ?? []
     }
 
@@ -231,37 +231,12 @@ public final class SteamClientOrchestrator: ObservableObject {
             game,
             steamExe: steamExe,
             preparation: preparation,
-            offline: offline
+            offline: offline,
+            clientAlreadyRunning: clientAlreadyRunning
         )
     }
 
-    private func runPreparedLaunch(
-        _ game: SteamGame,
-        steamExe: URL,
-        preparation: SteamLaunchPreparation?,
-        offline: Bool
-    ) async {
-        let libraryURL = preparation?.runtimeSelection.libraryURL
-            ?? WhiskyWineInstaller.libraryFolder
-        await RuntimeContext.withLibrary(libraryURL) {
-            guard await ensureSteamClient(
-                steamExe,
-                preparation: preparation,
-                offline: offline
-            )
-            else { return }
-            guard await requestLaunch(
-                game,
-                preparation: preparation,
-                offline: offline
-            )
-            else { return }
-            guard await observeGameStart(game, preparation: preparation) else { return }
-            await beginExitMonitoring(game, preparation: preparation)
-        }
-    }
-
-    private func ensureSteamClient(
+    func ensureSteamClient(
         _ steamExe: URL,
         preparation: SteamLaunchPreparation?,
         offline: Bool
@@ -279,7 +254,7 @@ public final class SteamClientOrchestrator: ObservableObject {
         return await !recordCancellationIfNeeded(preparation)
     }
 
-    private func requestLaunch(
+    func requestLaunch(
         _ game: SteamGame,
         preparation: SteamLaunchPreparation?,
         offline: Bool
@@ -299,7 +274,7 @@ public final class SteamClientOrchestrator: ObservableObject {
         }
     }
 
-    private func observeGameStart(
+    func observeGameStart(
         _ game: SteamGame,
         preparation: SteamLaunchPreparation?
     ) async -> Bool {
