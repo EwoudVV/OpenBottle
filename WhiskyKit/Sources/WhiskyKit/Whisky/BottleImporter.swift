@@ -90,6 +90,12 @@ public enum BottleImporter {
         let destination: String
     }
 
+    private enum ManifestItem {
+        case directory(String)
+        case file(FileRecord)
+        case symbolicLink(LinkRecord)
+    }
+
     public static func copy(
         bottleAt sourceURL: URL,
         to destinationRoot: URL,
@@ -179,24 +185,10 @@ public enum BottleImporter {
         var files: [FileRecord] = []
         var links: [LinkRecord] = []
         for case let item as URL in enumerator {
-            let path = try SaveVault.relativePath(of: item, below: root)
-            let values = try item.resourceValues(forKeys: keys)
-            if values.isSymbolicLink == true {
-                try links.append(LinkRecord(
-                    path: path,
-                    destination: FileManager.default.destinationOfSymbolicLink(atPath: item.path)
-                ))
-            } else if values.isDirectory == true {
-                directories.append(path)
-            } else if values.isRegularFile == true {
-                let attributes = try FileManager.default.attributesOfItem(atPath: item.path)
-                try files.append(FileRecord(
-                    path: path,
-                    byteCount: (attributes[.size] as? NSNumber)?.int64Value ?? 0,
-                    sha256: SaveVault.sha256(of: item)
-                ))
-            } else {
-                throw BottleImportError.unsupportedItem(path)
+            switch try manifestItem(for: item, below: root, keys: keys) {
+            case let .directory(path): directories.append(path)
+            case let .file(record): files.append(record)
+            case let .symbolicLink(record): links.append(record)
             }
         }
         if let unreadableItem {
@@ -209,6 +201,33 @@ public enum BottleImporter {
             files: files.sorted { $0.path < $1.path },
             symbolicLinks: links.sorted { $0.path < $1.path }
         )
+    }
+
+    private static func manifestItem(
+        for item: URL,
+        below root: URL,
+        keys: Set<URLResourceKey>
+    ) throws -> ManifestItem {
+        let path = try SaveVault.relativePath(of: item, below: root)
+        let values = try item.resourceValues(forKeys: keys)
+        if values.isSymbolicLink == true {
+            return try .symbolicLink(LinkRecord(
+                path: path,
+                destination: FileManager.default.destinationOfSymbolicLink(atPath: item.path)
+            ))
+        }
+        if values.isDirectory == true {
+            return .directory(path)
+        }
+        if values.isRegularFile == true {
+            let attributes = try FileManager.default.attributesOfItem(atPath: item.path)
+            return try .file(FileRecord(
+                path: path,
+                byteCount: (attributes[.size] as? NSNumber)?.int64Value ?? 0,
+                sha256: SaveVault.sha256(of: item)
+            ))
+        }
+        throw BottleImportError.unsupportedItem(path)
     }
 
     private static func requireCapacity(for byteCount: Int64, at root: URL) throws {
