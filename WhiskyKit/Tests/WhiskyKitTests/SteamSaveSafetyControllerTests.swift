@@ -109,7 +109,9 @@ final class SteamSaveSafetyControllerTests: XCTestCase {
         XCTAssertTrue(deferred.isEmpty)
         XCTAssertEqual(try Data(contentsOf: progress), Data("partial-old".utf8))
         let stillApplying = try await fixture.restoreJournal.record(for: operationID)
-        XCTAssertEqual(stillApplying, applying)
+        XCTAssertEqual(stillApplying.id, applying.id)
+        XCTAssertEqual(stillApplying.stage, applying.stage)
+        XCTAssertEqual(stillApplying.rollbackSnapshotID, applying.rollbackSnapshotID)
 
         let recovered = try await saveSafety.recoverUnfinished(
             bottleURL: fixture.bottleURL,

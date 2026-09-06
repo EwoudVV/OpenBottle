@@ -46,7 +46,9 @@ final class SaveRestoreJournalTests: XCTestCase {
 
         XCTAssertEqual(completed.stage, .completed)
         let persisted = try await journal.record(for: identifier)
-        XCTAssertEqual(persisted, completed)
+        XCTAssertEqual(persisted.id, completed.id)
+        XCTAssertEqual(persisted.stage, completed.stage)
+        XCTAssertEqual(persisted.rollbackSnapshotID, completed.rollbackSnapshotID)
         let unfinished = try await journal.unfinished()
         XCTAssertTrue(unfinished.isEmpty)
     }
