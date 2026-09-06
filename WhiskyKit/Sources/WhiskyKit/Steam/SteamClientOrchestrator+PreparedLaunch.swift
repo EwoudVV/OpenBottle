@@ -64,7 +64,7 @@ extension SteamClientOrchestrator {
     private func observeColdClientStart(
         preparation: SteamLaunchPreparation?
     ) async -> Bool {
-        if await watch.waitForAny(of: ["steam.exe"], timeout: timing.clientReadyTimeout) {
+        if await watch.waitForAny(of: ["steam.exe"], timeout: timing.coldClientReadyTimeout) {
             driver.clientDidBecomeReady()
             return await !recordCancellationIfNeeded(preparation)
         }

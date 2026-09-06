@@ -82856,145 +82856,145 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "لم يبدأ Steam خلال 90 ثانية. راجع دليل استكشاف أخطاء المشغّلات."
+            "value" : "لم يبدأ Steam خلال 150 ثانية. راجع دليل استكشاف أخطاء المشغّلات."
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam se nespustil do 90 sekund. Podívejte se do průvodce řešením potíží s launchery."
+            "value" : "Steam se nespustil do 150 sekund. Podívejte se do průvodce řešením potíží s launchery."
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam startede ikke inden for 90 sekunder. Se vejledningen til fejlfinding af launchere."
+            "value" : "Steam startede ikke inden for 150 sekunder. Se vejledningen til fejlfinding af launchere."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam wurde nicht innerhalb von 90 Sekunden gestartet. Sieh in der Anleitung zur Launcher-Fehlerbehebung nach."
+            "value" : "Steam wurde nicht innerhalb von 150 Sekunden gestartet. Sieh in der Anleitung zur Launcher-Fehlerbehebung nach."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam didn't start within 90 seconds. Check the launcher troubleshooting guide."
+            "value" : "Steam didn't start within 150 seconds. Check the launcher troubleshooting guide."
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam didn't start within 90 seconds. Check the launcher troubleshooting guide."
+            "value" : "Steam didn't start within 150 seconds. Check the launcher troubleshooting guide."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam no se ha iniciado en 90 segundos. Consulta la guía de resolución de problemas de lanzadores."
+            "value" : "Steam no se ha iniciado en 150 segundos. Consulta la guía de resolución de problemas de lanzadores."
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam ei käynnistynyt 90 sekunnissa. Katso käynnistimen vianmääritysopas."
+            "value" : "Steam ei käynnistynyt 150 sekunnissa. Katso käynnistimen vianmääritysopas."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam n'a pas démarré en 90 secondes. Consultez le guide de dépannage des lanceurs."
+            "value" : "Steam n'a pas démarré en 150 secondes. Consultez le guide de dépannage des lanceurs."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam non si è avviato entro 90 secondi. Consulta la guida alla risoluzione dei problemi dei launcher."
+            "value" : "Steam non si è avviato entro 150 secondi. Consulta la guida alla risoluzione dei problemi dei launcher."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam が 90 秒以内に起動しませんでした。ランチャーのトラブルシューティングガイドを確認してください。"
+            "value" : "Steam が 150 秒以内に起動しませんでした。ランチャーのトラブルシューティングガイドを確認してください。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam이 90초 안에 시작되지 않았습니다. 런처 문제 해결 가이드를 확인하십시오."
+            "value" : "Steam이 150초 안에 시작되지 않았습니다. 런처 문제 해결 가이드를 확인하십시오."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam is niet binnen 90 seconden gestart. Raadpleeg de handleiding voor launcherproblemen."
+            "value" : "Steam is niet binnen 150 seconden gestart. Raadpleeg de handleiding voor launcherproblemen."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam nie uruchomił się w ciągu 90 sekund. Sprawdź przewodnik rozwiązywania problemów z launcherami."
+            "value" : "Steam nie uruchomił się w ciągu 150 sekund. Sprawdź przewodnik rozwiązywania problemów z launcherami."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Steam não iniciou em 90 segundos. Consulte o guia de resolução de problemas de launchers."
+            "value" : "O Steam não iniciou em 150 segundos. Consulte o guia de resolução de problemas de launchers."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Steam não arrancou em 90 segundos. Consulte o guia de resolução de problemas de launchers."
+            "value" : "O Steam não arrancou em 150 segundos. Consulte o guia de resolução de problemas de launchers."
           }
         },
         "ro" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam nu a pornit în 90 de secunde. Consultă ghidul de depanare pentru launchere."
+            "value" : "Steam nu a pornit în 150 de secunde. Consultă ghidul de depanare pentru launchere."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam не запустился за 90 секунд. См. руководство по устранению неполадок лаунчеров."
+            "value" : "Steam не запустился за 150 секунд. См. руководство по устранению неполадок лаунчеров."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam startade inte inom 90 sekunder. Se felsökningsguiden för launchers."
+            "value" : "Steam startade inte inom 150 sekunder. Se felsökningsguiden för launchers."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam 90 saniye içinde başlamadı. Başlatıcı sorun giderme kılavuzuna bakın."
+            "value" : "Steam 150 saniye içinde başlamadı. Başlatıcı sorun giderme kılavuzuna bakın."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam не запустився за 90 секунд. Перегляньте посібник з усунення проблем лаунчерів."
+            "value" : "Steam не запустився за 150 секунд. Перегляньте посібник з усунення проблем лаунчерів."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam không khởi động trong 90 giây. Hãy xem hướng dẫn khắc phục trình khởi chạy."
+            "value" : "Steam không khởi động trong 150 giây. Hãy xem hướng dẫn khắc phục trình khởi chạy."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam 未在 90 秒内启动。请查看启动器疑难解答指南。"
+            "value" : "Steam 未在 150 秒内启动。请查看启动器疑难解答指南。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Steam 未在 90 秒內啟動。請查看啟動器疑難排解指南。"
+            "value" : "Steam 未在 150 秒內啟動。請查看啟動器疑難排解指南。"
           }
         }
       }

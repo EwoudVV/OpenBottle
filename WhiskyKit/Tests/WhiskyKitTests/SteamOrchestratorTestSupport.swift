@@ -107,6 +107,7 @@ final class FakeSteamClientDriver: SteamClientDriver {
 enum SteamOrchestratorFixture {
     static let fast = SteamClientOrchestrator.Timing(
         clientReadyTimeout: 0.3,
+        coldClientReadyTimeout: 0.3,
         launchGrace: 0.3,
         pollInterval: .milliseconds(5),
         trackingInterval: .milliseconds(10),

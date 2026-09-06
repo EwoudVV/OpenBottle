@@ -39,6 +39,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   initializer from WhiskyKit's public API, along with the `isClickOnce`
   property, so the kit needs a major version bump (#215).
 
+## [0.1.0-alpha.7] - 2026-09-06 (App)
+
+### Fixed
+- Cold profiled Steam launches now allow 150 seconds for the client to appear.
+  The real imported bottle needed about 96 seconds on its first start, just
+  beyond the previous 90-second limit.
+
 ## [0.1.0-alpha.6] - 2026-09-06 (App)
 
 ### Fixed
@@ -950,7 +957,8 @@ When adding entries to this changelog, use the following categories:
 - **Security** - Vulnerability fixes
 - **Documentation** - Documentation-only changes
 
-[Unreleased]: https://github.com/EwoudVV/OpenBottle/compare/app-v0.1.0-alpha.6...HEAD
+[Unreleased]: https://github.com/EwoudVV/OpenBottle/compare/app-v0.1.0-alpha.7...HEAD
+[0.1.0-alpha.7]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.7
 [0.1.0-alpha.6]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.6
 [0.1.0-alpha.5]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.5
 [0.1.0-alpha.4]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.4

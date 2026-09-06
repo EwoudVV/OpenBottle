@@ -60,6 +60,9 @@ public final class SteamClientOrchestrator: ObservableObject {
     public struct Timing: Sendable {
         /// How long to wait for steam.exe after starting the client.
         public var clientReadyTimeout: TimeInterval = 90
+        /// A cold profiled launch starts Steam and the game in one process. Its
+        /// first startup can take longer than bringing up the client alone.
+        public var coldClientReadyTimeout: TimeInterval = 150
         /// Steam forks the game and the -applaunch invocation returns
         /// immediately; shader precompilation can hold the real game process
         /// back for a long time. Lutris ships 120 seconds for this same wait.
@@ -73,12 +76,14 @@ public final class SteamClientOrchestrator: ObservableObject {
 
         public init(
             clientReadyTimeout: TimeInterval = 90,
+            coldClientReadyTimeout: TimeInterval = 150,
             launchGrace: TimeInterval = 120,
             pollInterval: Duration = .seconds(2),
             trackingInterval: Duration = .seconds(10),
             snapshotLifetime: TimeInterval = 1
         ) {
             self.clientReadyTimeout = clientReadyTimeout
+            self.coldClientReadyTimeout = coldClientReadyTimeout
             self.launchGrace = launchGrace
             self.pollInterval = pollInterval
             self.trackingInterval = trackingInterval
