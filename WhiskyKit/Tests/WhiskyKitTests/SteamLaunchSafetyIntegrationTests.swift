@@ -115,9 +115,10 @@ struct SteamLaunchSafetyIntegrationTests {
         let vaultURL = safetyRoot.appending(path: "Save Vault")
         let journalURL = safetyRoot.appending(path: "Transactions")
         let bottleID = BottleLaunchIdentity.id(for: bottle.url)
-        let controller = SteamLaunchSafetyController(
+        let controller = try SteamLaunchSafetyController(
             vault: SaveVault(rootURL: vaultURL),
-            journal: LaunchTransactionJournal(rootURL: journalURL)
+            journal: LaunchTransactionJournal(rootURL: journalURL),
+            runtimeResolver: makeRuntimeResolver(at: safetyRoot)
         )
         let driver = FakeSteamClientDriver(script: [["steam.exe"]])
         let orchestrator = SteamClientOrchestrator(
@@ -167,6 +168,31 @@ struct SteamLaunchSafetyIntegrationTests {
             )
         else { return false }
         return record.stage == .completed
+    }
+
+    private func makeRuntimeResolver(at root: URL) throws -> RuntimeResolver {
+        let library = root.appending(path: "Test Runtime/Libraries")
+        let wine = library.appending(path: "Wine/bin/wine64")
+        try FileManager.default.createDirectory(
+            at: wine.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("test-wine".utf8).write(to: wine)
+        let plist: [String: Any] = [
+            "version": ["major": 3, "minor": 1, "patch": 1],
+            "dxvkVersion": "1.10.3"
+        ]
+        try PropertyListSerialization.data(
+            fromPropertyList: plist,
+            format: .xml,
+            options: 0
+        ).write(to: library.appending(path: "WhiskyWineVersion.plist"))
+        let manager = RuntimeSlotManager(rootURL: root.appending(path: "Test Runtime Slots"))
+        return RuntimeResolver(
+            manager: manager,
+            pins: RuntimePinStore(rootURL: root.appending(path: "Test Runtime Pins")),
+            legacyLibraryURL: library
+        )
     }
 }
 

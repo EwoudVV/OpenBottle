@@ -1,0 +1,101 @@
+name: OpenBottle Preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: Preview label used in artifact filenames
+        required: true
+        default: 0.1.0-alpha.1
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openbottle-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-preview:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Check source identity
+        run: |
+          ./scripts/openbottle-identity.py --check
+          ./scripts/british-english.py --check
+
+      - name: Build unsigned Release app
+        run: |
+          set -euo pipefail
+          xcodebuild -project OpenBottle.xcodeproj \
+            -scheme OpenBottle \
+            -configuration Release \
+            -derivedDataPath build/DerivedData \
+            build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            SKIP_SWIFTLINT_BUILD_PHASE=YES
+
+      - name: Verify and package preview
+        env:
+          PREVIEW_LABEL: ${{ inputs.label }}
+        run: |
+          set -euo pipefail
+          app="build/DerivedData/Build/Products/Release/OpenBottle.app"
+          test -d "$app"
+          test "$(defaults read "$(pwd)/$app/Contents/Info" CFBundleIdentifier)" = "io.github.ewoudvv.OpenBottle"
+          test "$(defaults read "$(pwd)/$app/Contents/Info" CFBundleShortVersionString)" = "0.1.0"
+          for resource in OpenBottleCmd winetricks verbs.txt cabextract; do
+            test -f "$app/Contents/Resources/$resource"
+          done
+
+          find "$app/Contents" -type f -perm -111 -print0 \
+            | while IFS= read -r -d '' executable; do
+                codesign --force --sign - --timestamp=none "$executable" 2>/dev/null || true
+              done
+          find "$app/Contents" \( -name '*.framework' -o -name '*.appex' \) -type d -depth -print0 \
+            | while IFS= read -r -d '' bundle; do
+                codesign --force --deep --sign - --timestamp=none "$bundle"
+              done
+          codesign --force --deep --sign - --timestamp=none "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+
+          mkdir -p build/preview/dmg
+          ditto "$app" build/preview/dmg/OpenBottle.app
+          ln -s /Applications build/preview/dmg/Applications
+          cat > build/preview/dmg/README.txt <<'EOF'
+          OpenBottle 0.1.0 preview
+
+          Drag OpenBottle.app to Applications. This preview is ad-hoc signed for
+          testing and is not notarized. It uses its own app identity and data;
+          Whisky.app and Whisky bottles are not changed.
+          EOF
+
+          ditto -c -k --keepParent "$app" "build/preview/OpenBottle-${PREVIEW_LABEL}.zip"
+          hdiutil create \
+            -volname "OpenBottle Preview" \
+            -srcfolder build/preview/dmg \
+            -format UDZO \
+            -ov "build/preview/OpenBottle-${PREVIEW_LABEL}.dmg"
+          cd build/preview
+          shasum -a 256 "OpenBottle-${PREVIEW_LABEL}.dmg" \
+            "OpenBottle-${PREVIEW_LABEL}.zip" > SHA256SUMS.txt
+
+      - name: Upload preview
+        uses: actions/upload-artifact@v7
+        with:
+          name: OpenBottle-${{ inputs.label }}
+          path: |
+            build/preview/OpenBottle-${{ inputs.label }}.dmg
+            build/preview/OpenBottle-${{ inputs.label }}.zip
+            build/preview/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30

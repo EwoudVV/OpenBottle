@@ -41,7 +41,7 @@ struct LibraryView: View {
 
     @AppStorage("librarySort") private var sort: LibrarySort = .recent
 
-    @StateObject private var model = LibraryModel()
+    @StateObject var model = LibraryModel()
     @State private var search: String = ""
     @State var runtimeSlots: [RuntimeSlot] = []
     @State var selectedRuntimeSlotID: String?

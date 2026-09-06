@@ -36,13 +36,15 @@ public struct SteamLaunchSafetyController: Sendable {
         maximumSnapshots: Int = SaveVault.defaultMaximumSnapshots,
         configurationVault: SaveVault? = nil,
         configurationRestoreJournal: SaveRestoreJournal? = nil,
-        savePolicyStore: GameSavePolicyStore? = nil
+        savePolicyStore: GameSavePolicyStore? = nil,
+        runtimeResolver: RuntimeResolver? = nil
     ) {
         self.controller = LaunchSafetyController(
             saveVault: vault,
             journal: journal,
             configurationVault: configurationVault,
             configurationRestoreJournal: configurationRestoreJournal,
+            runtimeResolver: runtimeResolver,
             maximumSaveSnapshots: maximumSnapshots
         )
         self.entries = entries
