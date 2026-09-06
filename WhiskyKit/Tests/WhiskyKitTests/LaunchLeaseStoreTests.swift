@@ -24,7 +24,10 @@ final class LaunchLeaseStoreTests: XCTestCase {
     func testLeaseIsExclusiveAndOnlyItsOwnerCanReleaseIt() async throws {
         let root = makeFixture()
         defer { try? FileManager.default.removeItem(at: root) }
-        let store = LaunchLeaseStore(rootURL: root, processID: 42)
+        let store = LaunchLeaseStore(
+            rootURL: root,
+            processID: ProcessInfo.processInfo.processIdentifier
+        )
         let firstID = UUID()
         let secondID = UUID()
 
