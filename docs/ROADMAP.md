@@ -23,8 +23,9 @@ evidence to explain which layer made the difference.
 - [x] create a reversible DXMT + MetalFX launcher with hash-checked restoration
 - [x] visually test DXMT with 2x MetalFX spatial reconstruction
 - [x] preserve the first real play session in a verified save backup
-- [x] make the experiment launch through Steam and wait for its cloud-save check
-- [ ] verify the corrected Steam launch writes to the game folder
+- [x] restore the verified 21-minute local save after Steam changed the active copy
+- [x] make the experiment fail closed unless Screw Drivers cloud is disabled
+- [x] verify the offline Steam launch uses the game folder with sync disabled
 - [ ] compare the 60 and 120 FPS MetalFX modes for input latency and CPU use
 - [ ] record FPS and frame-time evidence during the same driving route
 - [ ] profile one vehicle calculation with `sample`

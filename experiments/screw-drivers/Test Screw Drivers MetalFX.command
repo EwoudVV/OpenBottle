@@ -69,17 +69,65 @@ if [[ "${#game_paths[@]}" -gt 1 ]]; then
 fi
 
 game_executable="${game_paths[0]}"
+game_root="$(dirname "$game_executable")"
 bottle="${game_executable%%/drive_c/*}"
 metadata="$bottle/Metadata.plist"
 bottle_name="$(plutil -extract info.name raw "$metadata")"
 wine_user="$(id -un)"
 player_log="$bottle/drive_c/users/$wine_user/AppData/LocalLow/Creactstudios/Screw Drivers/Player.log"
-steam_login_log="$bottle/drive_c/Program Files (x86)/Steam/logs/steamui_login.txt"
 steam_cloud_log="$bottle/drive_c/Program Files (x86)/Steam/logs/cloud_log.txt"
 explorer_hash="$(printf '%s' '/drive_c/windows/explorer.exe' | shasum -a 256 | awk '{print substr($1, 1, 8)}')"
 explorer_settings="$bottle/Program Settings/explorer-$explorer_hash.plist"
 explorer_history="$bottle/Program Settings/explorer.exe.run-history.plist"
 separate_save="$bottle/drive_c/windows/saveables.dat"
+active_save="$game_root/saveables.dat"
+
+steam_shared_configs=()
+while IFS= read -r shared_config; do
+    steam_shared_configs+=("$shared_config")
+done < <(find "$bottle/drive_c/Program Files (x86)/Steam/userdata" \
+    -type f -path '*/7/remote/sharedconfig.vdf' -print 2>/dev/null)
+
+if [[ "${#steam_shared_configs[@]}" -ne 1 ]]; then
+    echo "Expected one Steam sharedconfig.vdf, found ${#steam_shared_configs[@]}." >&2
+    echo "Cloud safety cannot be verified, so the game will not start." >&2
+    exit 1
+fi
+steam_shared_config="${steam_shared_configs[0]}"
+
+steam_cloud_is_disabled() {
+    awk -v app_id="$app_id" '
+        BEGIN {
+            in_app = 0
+            opened = 0
+            depth = 0
+            found = 0
+        }
+        !in_app && $0 ~ "^[[:space:]]*\\\"" app_id "\\\"[[:space:]]*$" {
+            in_app = 1
+            next
+        }
+        in_app {
+            opens = gsub(/\{/, "{")
+            closings = gsub(/\}/, "}")
+            if ($0 ~ /"cloudenabled"[[:space:]]+"0"/) {
+                found = 1
+            }
+            if (opens > 0) {
+                opened = 1
+            }
+            depth += opens - closings
+            if (opened && depth <= 0) {
+                exit(found ? 0 : 1)
+            }
+        }
+        END {
+            if (!found) {
+                exit 1
+            }
+        }
+    ' "$steam_shared_config"
+}
 
 dll_names=(d3d11.dll dxgi.dll d3d10core.dll winemetal.dll)
 dll_dirs=(system32 syswow64)
@@ -105,10 +153,22 @@ if [[ "$action" == "check" ]]; then
     echo "Output target: 3456x2234"
     echo "Profile: $profile"
     echo "Frame cap: $frame_cap"
+    if steam_cloud_is_disabled; then
+        echo "Steam Cloud for app $app_id: disabled (local saves only)"
+    else
+        echo "Steam Cloud for app $app_id: enabled or unknown"
+        exit 1
+    fi
     if [[ -f "$separate_save" ]]; then
         echo "Separate direct-launch save detected at C:\\windows. Preserve or migrate it before cleanup."
     fi
     exit 0
+fi
+
+if ! steam_cloud_is_disabled; then
+    echo "Steam Cloud is not disabled for Screw Drivers." >&2
+    echo "The game will not start because this launcher is local-save only." >&2
+    exit 1
 fi
 
 if [[ -f "$separate_save" ]]; then
@@ -253,45 +313,24 @@ plutil -insert environment.DXMT_METALFX_SPATIAL_SWAPCHAIN -string 1 "$explorer_s
     echo "scale_factor=$scale_factor"
     echo "profile=$profile"
     echo "frame_cap=$frame_cap"
-    echo "launch_method=steam-applaunch"
+    echo "launch_method=steam-offline-applaunch"
+    echo "local_save_only=true"
+    if [[ -f "$active_save" ]]; then
+        echo "active_save_before_sha256=$(shasum -a 256 "$active_save" | awk '{print $1}')"
+    fi
 } > "$run_dir/run-info.txt"
 
-login_start_line=0
-if [[ -f "$steam_login_log" ]]; then
-    login_start_line="$(wc -l < "$steam_login_log" | tr -d ' ')"
-fi
-
-"$whisky_cli" run "$bottle_name" 'C:\windows\explorer.exe' -- \
-    "/desktop=$virtual_desktop" "$steam_windows" \
-    > "$run_dir/launcher.log" 2>&1 &
-steam_launcher_pid=$!
-
-steam_ready=0
-for _ in $(seq 1 90); do
-    if [[ -f "$steam_login_log" ]] \
-        && tail -n "+$(( login_start_line + 1 ))" "$steam_login_log" \
-        | grep -q 'SetLoginState: Success'; then
-        steam_ready=1
-        break
-    fi
-    sleep 1
-done
-if [[ "$steam_ready" -ne 1 ]]; then
-    echo "Steam did not finish logging in within 90 seconds." >&2
-    exit 1
-fi
-
-cloud_sync_count_before=0
+cloud_log_start_line=0
 if [[ -f "$steam_cloud_log" ]]; then
-    cloud_sync_count_before="$(grep -F -c "[AppID $app_id] Starting sync (eval,)" "$steam_cloud_log" 2>/dev/null || true)"
-    [[ -z "$cloud_sync_count_before" ]] && cloud_sync_count_before=0
+    cloud_log_start_line="$(wc -l < "$steam_cloud_log" | tr -d ' ')"
 fi
 
 launch_epoch="$(date +%s)"
-"$whisky_cli" run "$bottle_name" "$steam_windows" -- -applaunch "$app_id" \
+"$whisky_cli" run "$bottle_name" 'C:\windows\explorer.exe' -- \
+    "/desktop=$virtual_desktop" "$steam_windows" -offline -applaunch "$app_id" \
     -screen-fullscreen 0 -screen-width 1728 -screen-height 1117 \
-    >> "$run_dir/launcher.log" 2>&1 &
-game_launcher_pid=$!
+    > "$run_dir/launcher.log" 2>&1 &
+steam_launcher_pid=$!
 
 game_pid=""
 for _ in $(seq 1 180); do
@@ -369,34 +408,40 @@ done
 
 cp -p "$player_log" "$run_dir/Player.log" 2>/dev/null || true
 echo "ended_utc=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$run_dir/run-info.txt"
+if [[ -f "$active_save" ]]; then
+    echo "active_save_after_sha256=$(shasum -a 256 "$active_save" | awk '{print $1}')" \
+        >> "$run_dir/run-info.txt"
+fi
 
-echo "Waiting for Steam Cloud to evaluate the save..."
-cloud_sync_status=not-observed
-for _ in $(seq 1 60); do
-    current_sync_count=0
-    if [[ -f "$steam_cloud_log" ]]; then
-        current_sync_count="$(grep -F -c "[AppID $app_id] Starting sync (eval,)" "$steam_cloud_log" 2>/dev/null || true)"
-        [[ -z "$current_sync_count" ]] && current_sync_count=0
-    fi
-    if [[ "$current_sync_count" -gt "$cloud_sync_count_before" ]]; then
-        awk -v app_id="$app_id" '
-            index($0, "[AppID " app_id "] Starting sync (eval,)") {
-                block = ""
-                capture = 1
-            }
-            capture && index($0, "[AppID " app_id "]") {
-                block = block $0 "\n"
-            }
-            END {printf "%s", block}
-        ' "$steam_cloud_log" > "$run_dir/cloud-sync-after-exit.log"
-        if grep -F -q "[AppID $app_id] Eval complete" "$run_dir/cloud-sync-after-exit.log"; then
-            cloud_sync_status=complete
-            break
-        fi
-    fi
+echo "Checking that Steam Cloud stayed inactive..."
+for _ in 1 2 3 4 5; do
     sleep 1
 done
-echo "cloud_sync_after_exit=$cloud_sync_status" >> "$run_dir/run-info.txt"
+if [[ -f "$steam_cloud_log" ]]; then
+    tail -n "+$(( cloud_log_start_line + 1 ))" "$steam_cloud_log" \
+        > "$run_dir/cloud-log-delta.log"
+else
+    : > "$run_dir/cloud-log-delta.log"
+fi
+unexpected_sync="$(grep -F "[AppID $app_id] Starting sync" "$run_dir/cloud-log-delta.log" \
+    | grep -F -v 'Starting sync (init,)' \
+    | grep -F -v 'Starting sync (eval,)' \
+    | grep -F -v 'Starting sync (AC Launch,Sync Disabled,)' || true)"
+if [[ -n "$unexpected_sync" ]]; then
+    echo "cloud_guard=unexpected-mode" >> "$run_dir/run-info.txt"
+    printf '%s\n' "$unexpected_sync" > "$run_dir/unexpected-cloud-mode.log"
+    echo "Warning: Steam entered an unexpected cloud-sync mode." >&2
+    echo "The local save has been left in place and should be backed up before another run." >&2
+elif grep -F -q "[AppID $app_id] Starting sync (AC Launch,Sync Disabled,)" \
+    "$run_dir/cloud-log-delta.log"; then
+    echo "cloud_guard=sync-disabled" >> "$run_dir/run-info.txt"
+elif grep -F -q "[AppID $app_id] Starting sync" "$run_dir/cloud-log-delta.log"; then
+    echo "cloud_guard=unconfirmed" >> "$run_dir/run-info.txt"
+    echo "Warning: Steam evaluated cloud state without a disabled marker." >&2
+    echo "The local save has been left in place and should be backed up before another run." >&2
+else
+    echo "cloud_guard=inactive" >> "$run_dir/run-info.txt"
+fi
 
 if [[ -f "$separate_save" ]]; then
     echo "save_location_error=C:\\windows" >> "$run_dir/run-info.txt"
@@ -406,7 +451,6 @@ fi
 
 restore_original
 wait "$steam_launcher_pid" 2>/dev/null || true
-wait "$game_launcher_pid" 2>/dev/null || true
 trap - EXIT INT TERM HUP
 
 echo "Test complete. The original setup was restored."

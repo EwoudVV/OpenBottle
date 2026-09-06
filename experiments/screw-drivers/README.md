@@ -12,8 +12,11 @@ frame cap: 60 FPS
 
 double-click the command or run it from Terminal. it finds the single Screw
 Drivers installation under Whisky's bottle folder, so no bottle UUID or username
-is stored in this repository. Steam launches app 1279510 inside the test desktop,
-which keeps the game's working directory and Steam Cloud handling correct.
+is stored in this repository. Steam launches app 1279510 offline inside the test
+desktop, which keeps the game's working directory correct without syncing saves.
+
+the launcher is local-save only. it reads Steam's per-game setting and refuses to
+start unless cloud is disabled for Screw Drivers. other games are not changed.
 
 use `--check` for a read-only preflight:
 
@@ -37,15 +40,16 @@ play session, and it is expected to use more CPU. its read-only check is:
 - motion should feel at least as even as the normal DXVK launch;
 - vehicle calculation and map loading should be tested separately.
 
-quit the game normally when the comparison is finished. the command waits for
-Steam's per-game cloud-save evaluation, then closes the test bottle and restores
-the exact metadata, program settings, and eight renderer DLLs it found before
-launch. interruption and Terminal close use the same restore path.
+quit the game normally when the comparison is finished. Steam may still evaluate
+its cached file list, but the command requires the `Sync Disabled` marker and
+rejects any actual sync mode. it then closes the test bottle and restores the exact
+metadata, program settings, and eight renderer DLLs it found before launch.
+interruption and Terminal close use the same restore path.
 
-the first direct-launch version wrote one session under `C:\windows`. the current
-launcher detects that separate progress and refuses to start until it has been
-preserved and either selected or archived. this prevents a silent switch between
-two different save histories.
+the first direct-launch version wrote one session under `C:\windows`. that exact
+44-file session is now restored beside the game as the active local save. both the
+older Steam state and the later cloud-modified state have separate verified
+rollback backups.
 
 each run writes hashes, process samples, and the Unity player log under
 `~/Library/Logs/OpenBottle`. those machine-specific logs are local and should not

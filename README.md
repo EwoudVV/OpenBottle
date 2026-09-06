@@ -48,6 +48,8 @@ frame times are measured.
 the reversible launcher, the lower-latency 120 FPS comparison, and the things to
 check are in
 [experiments/screw-drivers](experiments/screw-drivers/README.md).
+the current experiment is local-save only: it refuses to start unless Steam Cloud
+is disabled for Screw Drivers, and it starts that Steam session offline.
 
 vehicle calculation and map loading are separate CPU workloads. the next test
 will sample the game while those operations happen instead of assuming a graphics

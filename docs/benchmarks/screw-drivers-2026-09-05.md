@@ -67,9 +67,21 @@ the first direct test launch also exposed a save-path bug: its Windows working
 directory was `C:\windows`, so that session created a separate fresh save instead
 of changing the older Steam-managed save beside the game. both trees were copied
 into one timestamped backup and all 812 payload hashes passed verification. the
-launcher now uses Steam's `-applaunch 1279510` path, waits for Steam Cloud's
-per-game evaluation after exit, and refuses to run while a separate save still
-needs a deliberate choice.
+the launcher was then changed to use Steam's `-applaunch 1279510` path, wait for
+Steam Cloud's per-game evaluation after exit, and refuse to run while a separate
+save still needed a deliberate choice.
+
+that cloud behavior was removed on 6 september. Steam later changed the active
+game-folder copy, so the cloud-modified state was preserved in a second verified
+rollback backup and the 44-file local session was restored byte-for-byte. the
+launcher now refuses to run unless Steam's per-game `cloudenabled` value is `0`,
+starts Steam with `-offline`, records the active save hash before and after play,
+and checks that the cloud log did not receive another sync event.
+
+a short 120 FPS startup check confirmed the game process used the Screw Drivers
+install folder as its working directory. Steam logged `AC Launch,Sync Disabled`,
+the active save hash stayed unchanged, every renderer restoration hash matched,
+and the bottle returned to DXVK.
 
 ## what this says
 

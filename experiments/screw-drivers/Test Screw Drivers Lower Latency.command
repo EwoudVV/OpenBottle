@@ -14,4 +14,15 @@ while [[ -L "$launcher_path" ]]; do
 done
 launcher_dir="$(cd "$(dirname "$launcher_path")" && pwd)"
 
-exec "$launcher_dir/Test Screw Drivers MetalFX.command" --lower-latency
+case "${1:-}" in
+    ""|--lower-latency)
+        exec "$launcher_dir/Test Screw Drivers MetalFX.command" --lower-latency
+        ;;
+    --check|--check-lower-latency)
+        exec "$launcher_dir/Test Screw Drivers MetalFX.command" --check-lower-latency
+        ;;
+    *)
+        echo "Usage: $0 [--check]" >&2
+        exit 64
+        ;;
+esac
