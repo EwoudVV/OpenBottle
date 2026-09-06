@@ -102,10 +102,12 @@ public extension Program {
         let environment = generateEnvironment()
 
         do {
-            let result = try await Wine.runProgram(
+            let session = try await SafeProgramLauncher.launch(
                 at: self.url, args: arguments, bottle: self.bottle, environment: environment,
                 programOverrides: settings.overrides, programSettings: settings
             )
+            let result = session.result
+            observeSafetySession(session)
 
             // Track the log file URL for diagnostics
             settings.lastLogFileURL = result.logFileURL
@@ -237,73 +239,6 @@ public extension Program {
         }
     }
 
-    /// Generates the terminal command to run this program via Wine.
-    /// - Parameter args: Optional arguments string to use instead of saved settings.
-    ///   If nil, uses `settings.arguments` from the program's saved configuration.
-    /// - Returns: The full Wine command string ready for terminal execution.
-    func generateTerminalCommand(args: String? = nil) -> String {
-        Wine.generateRunCommand(
-            at: self.url, bottle: bottle, args: args ?? settings.arguments, environment: generateEnvironment()
-        )
-    }
-
-    /// Generates the terminal command to run this program via Wine with array-based arguments.
-    /// - Parameter args: Array of arguments where each element is a separate argument.
-    ///   Each argument is individually escaped to preserve argument boundaries.
-    /// - Returns: The full Wine command string ready for terminal execution.
-    func generateTerminalCommand(args: [String]) -> String {
-        // Escape each argument individually to preserve argument boundaries
-        // e.g., ["--name", "Player Name"] -> "--name Player\ Name" (two separate args)
-        let escapedArgs = args.map(\.esc).joined(separator: " ")
-        return Wine.generateRunCommand(
-            at: self.url, bottle: bottle, args: escapedArgs, environment: generateEnvironment(), preEscaped: true
-        )
-    }
-
-    func runInTerminal() {
-        // Write command to a temp script file to avoid AppleScript string length limits
-        // and complex escaping issues with very long Wine commands
-        let command = generateTerminalCommand()
-        let scriptContent = "#!/bin/bash\n\(command)\n"
-
-        let tempDir = FileManager.default.temporaryDirectory
-        let scriptURL = tempDir.appendingPathComponent("whisky-run-\(UUID().uuidString).sh")
-
-        do {
-            try scriptContent.write(to: scriptURL, atomically: true, encoding: .utf8)
-            try FileManager.default.setAttributes(
-                [.posixPermissions: 0o755],
-                ofItemAtPath: scriptURL.path
-            )
-        } catch {
-            Logger.wineKit.error("Failed to write terminal script: \(error)")
-            return
-        }
-
-        // Register temp script for tracking and cleanup
-        TempFileTracker.shared.register(file: scriptURL)
-
-        // Use the user's preferred terminal application
-        let terminal = TerminalApp.preferred
-        let appleScript = terminal.generateAppleScript(for: scriptURL.path)
-
-        Task {
-            var error: NSDictionary?
-            guard let script = NSAppleScript(source: appleScript) else { return }
-            script.executeAndReturnError(&error)
-
-            if let error {
-                Logger.wineKit.error("Failed to run terminal script \(error)")
-                guard let description = error["NSAppleScriptErrorMessage"] as? String else { return }
-                self.showRunError(message: String(describing: description))
-            }
-
-            // Clean up temp script after a delay to ensure the terminal has read it
-            try? await Task.sleep(for: .seconds(5))
-            await TempFileTracker.shared.cleanupWithRetry(file: scriptURL)
-        }
-    }
-
     @MainActor private func showRunError(message: String) {
         let alert = NSAlert()
         alert.messageText = String(localized: "alert.message")
@@ -367,10 +302,12 @@ extension Program {
 
         Task {
             do {
-                let result = try await Wine.runProgram(
+                let session = try await SafeProgramLauncher.launch(
                     at: self.url, args: arguments, bottle: self.bottle, environment: environment,
                     programOverrides: settings.overrides, programSettings: settings
                 )
+                let result = session.result
+                observeSafetySession(session)
 
                 // Track the log file URL
                 settings.lastLogFileURL = result.logFileURL
@@ -384,6 +321,18 @@ extension Program {
                 }
             } catch {
                 self.showRunError(message: error.localizedDescription)
+            }
+        }
+    }
+
+    private func observeSafetySession(_ session: SafeProgramSession) {
+        Task {
+            do {
+                _ = try await session.waitForExit()
+            } catch {
+                Logger.wineKit.error(
+                    "Launch cleanup failed for \(self.name): \(error.localizedDescription)"
+                )
             }
         }
     }

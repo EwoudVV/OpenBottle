@@ -82,7 +82,7 @@ public extension URL {
     func prettyPath() -> String {
         var prettyPath = path(percentEncoded: false)
         prettyPath = prettyPath
-            .replacingOccurrences(of: Bundle.main.bundleIdentifier ?? Bundle.whiskyBundleIdentifier, with: "Whisky")
+            .replacingOccurrences(of: ProductIdentity.appBundleIdentifier, with: ProductIdentity.name)
             .replacingOccurrences(of: "/Users/\(NSUserName())", with: "~")
         return prettyPath
     }

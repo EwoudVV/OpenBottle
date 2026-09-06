@@ -92,12 +92,18 @@ struct FileOpenView: View {
                     }
 
                     if fileURL.pathExtension == "bat" {
-                        try await Wine.runBatchFile(
-                            url: fileURL,
+                        try await SafeProgramLauncher.runBatchFile(
+                            at: fileURL,
                             bottle: bottle
                         )
                     } else {
-                        try await Wine.runProgram(at: fileURL, bottle: bottle)
+                        let session = try await SafeProgramLauncher.launch(
+                            at: fileURL,
+                            bottle: bottle
+                        )
+                        Task {
+                            _ = try? await session.waitForExit()
+                        }
                     }
                 } catch {
                     // Surface the failure on the presenting view's toast (the sheet

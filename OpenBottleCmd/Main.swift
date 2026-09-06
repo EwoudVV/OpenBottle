@@ -205,9 +205,9 @@ extension OpenBottle {
         static let configuration = CommandConfiguration(
             abstract: "Run a program with OpenBottle.",
             discussion: """
-            Runs a Windows program directly using Wine. Use --command to print \
-            the command instead. Use --follow to stream program output to the \
-            terminal in real time. Use --tail-log to follow the Wine log file.
+            Runs a Windows program through OpenBottle's safe launch transaction. \
+            Use --command to print the underlying Wine command instead. Use \
+            --follow or --tail-log to follow the Wine log file.
 
             Options the program itself takes (for example --disable-gpu) are \
             passed through as written. If a program option has the same name \
@@ -300,9 +300,15 @@ extension OpenBottle {
             let environment = program.generateEnvironment()
 
             do {
-                let result = try await Wine.runProgram(
-                    at: url, args: args, bottle: bottle, environment: environment
+                let session = try await SafeProgramLauncher.launch(
+                    at: url,
+                    args: args,
+                    bottle: bottle,
+                    environment: environment,
+                    programOverrides: program.settings.overrides,
+                    programSettings: program.settings
                 )
+                let result = session.result
 
                 let exeName = url.lastPathComponent
                 let bottleName = bottle.settings.name
@@ -316,6 +322,8 @@ extension OpenBottle {
                     // After launch confirmation, tail the log file
                     try await tailLogFile(at: result.logFileURL)
                 }
+
+                _ = try await session.waitForExit()
 
                 if result.exitCode != 0 {
                     throw ExitCode(result.exitCode)
@@ -335,32 +343,25 @@ extension OpenBottle {
         private func runWithFollow(
             url: URL, args: [String], bottle: Bottle, program: Program
         ) async throws {
-            let environment = program.generateEnvironment()
-            var exitCode: Int32 = 0
-
-            // Use the public runWineProcess streaming API for real-time output
-            let wineArgs = ["start", "/unix", url.path(percentEncoded: false)] + args
-            let stream = try Wine.runWineProcess(
-                name: url.lastPathComponent, args: wineArgs, bottle: bottle, environment: environment
+            let session = try await SafeProgramLauncher.launch(
+                at: url,
+                args: args,
+                bottle: bottle,
+                environment: program.generateEnvironment(),
+                programOverrides: program.settings.overrides,
+                programSettings: program.settings
+            )
+            FileHandle.standardError.write(
+                Data("Log: \(session.result.logFileURL.path(percentEncoded: false))\n".utf8)
+            )
+            try await tailLogFile(at: session.result.logFileURL)
+            _ = try await session.waitForExit()
+            FileHandle.standardError.write(
+                Data("Exited with code \(session.result.exitCode)\n".utf8)
             )
 
-            for await output in stream {
-                switch output {
-                case .started:
-                    break
-                case let .message(line):
-                    FileHandle.standardOutput.write(Data(line.utf8))
-                case let .error(line):
-                    FileHandle.standardError.write(Data(line.utf8))
-                case let .terminated(code):
-                    exitCode = code
-                }
-            }
-
-            FileHandle.standardError.write(Data("Exited with code \(exitCode)\n".utf8))
-
-            if exitCode != 0 {
-                throw ExitCode(exitCode)
+            if session.result.exitCode != 0 {
+                throw ExitCode(session.result.exitCode)
             }
         }
 
@@ -585,7 +586,17 @@ extension OpenBottle {
                 target = try SteamLauncher.resolveBottle(appId: appId, in: bottles)
             }
 
-            try SteamLauncher.launch(appId: appId, bottle: target)
+            let resolved = try SteamLauncher.resolveGame(appId: appId, in: [target])
+            let orchestrator = SteamClientOrchestrator(
+                bottle: target,
+                launchSafety: SteamLaunchSafetyController.live()
+            )
+            defer { orchestrator.stop() }
+            orchestrator.launch(resolved.game)
+            await orchestrator.waitUntilFinished(resolved.game)
+            if let launchError = orchestrator.launchError {
+                throw DomainError(launchError)
+            }
 
             if json {
                 let payload = [

@@ -59,6 +59,32 @@ public struct SteamProcessWatch: Sendable {
         return false
     }
 
+    /// Waits for every named process to stay absent for consecutive polls.
+    public func waitUntilNone(
+        of names: Set<String>,
+        consecutiveChecks: Int = 2
+    ) async -> Bool {
+        guard !names.isEmpty else { return true }
+
+        var absentChecks = 0
+        while !Task.isCancelled {
+            if await runningImageNames().isDisjoint(with: names) {
+                absentChecks += 1
+                if absentChecks >= max(1, consecutiveChecks) {
+                    return true
+                }
+            } else {
+                absentChecks = 0
+            }
+            do {
+                try await Task.sleep(for: pollInterval)
+            } catch {
+                return false
+            }
+        }
+        return false
+    }
+
     /// The keys whose executable-name sets intersect the running processes.
     ///
     /// Used to mark which games are currently running, keyed by App ID.

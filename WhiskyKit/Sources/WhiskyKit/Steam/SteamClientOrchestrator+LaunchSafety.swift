@@ -34,10 +34,16 @@ extension SteamClientOrchestrator {
             if let game,
                isRunning,
                [.launchRequested, .monitoring, .recoveryNeeded].contains(record.stage) {
-                let preparation = try await launchSafety.resumeMonitoring(record)
+                let preparation = try await launchSafety.resumeMonitoring(
+                    record,
+                    bottleURL: bottle.url
+                )
                 startExitMonitor(for: game, preparation: preparation)
             } else {
-                _ = try await launchSafety.finishInterrupted(record)
+                _ = try await launchSafety.finishInterrupted(
+                    record,
+                    bottleURL: bottle.url
+                )
             }
         }
     }

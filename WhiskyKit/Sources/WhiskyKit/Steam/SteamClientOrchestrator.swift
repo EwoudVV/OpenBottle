@@ -137,6 +137,16 @@ public final class SteamClientOrchestrator: ObservableObject {
         launchTasks[game.appId] = Task { await performLaunch(game) }
     }
 
+    /// Waits until launch preparation and every owned exit cleanup task finish.
+    public func waitUntilFinished(
+        _ game: SteamGame,
+        pollInterval: Duration = .milliseconds(200)
+    ) async {
+        while phases[game.appId] != nil || !exitMonitorTasks.isEmpty {
+            try? await Task.sleep(for: pollInterval)
+        }
+    }
+
     /// Polls the bottle's process list so the library can show which games
     /// are running, including ones started outside Whisky.
     public func startTracking(games: [SteamGame]) {
@@ -214,12 +224,19 @@ public final class SteamClientOrchestrator: ObservableObject {
         let transactionID = launchSafety == nil ? nil : UUID()
         launchTransactionIDs[game.appId] = transactionID
 
+        if Self.shouldApplyLauncherFixes(settings: bottle.settings) {
+            driver.applyLauncherFixes()
+        }
+
         do {
             preparation = try await launchSafety?.prepare(
                 game: game,
                 bottleURL: bottle.url,
                 identifier: transactionID ?? UUID()
             )
+            if let preparation {
+                _ = try await launchSafety?.markPrepared(preparation)
+            }
         } catch {
             if !Task.isCancelled {
                 launchError = error.localizedDescription
@@ -258,7 +275,6 @@ public final class SteamClientOrchestrator: ObservableObject {
         phases[game.appId] = .launching
         do {
             if let preparation {
-                _ = try await launchSafety?.markPrepared(preparation)
                 _ = try await launchSafety?.markLaunchRequested(preparation)
             }
             if await recordCancellationIfNeeded(preparation) { return false }
@@ -302,9 +318,6 @@ public final class SteamClientOrchestrator: ObservableObject {
             return
         }
 
-        if Self.shouldApplyLauncherFixes(settings: bottle.settings) {
-            driver.applyLauncherFixes()
-        }
         driver.startClient(steamExe: steamExe)
 
         if await watch.waitForAny(of: ["steam.exe"], timeout: timing.clientReadyTimeout) {

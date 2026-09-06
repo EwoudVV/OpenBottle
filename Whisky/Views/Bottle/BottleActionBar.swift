@@ -98,9 +98,18 @@ struct BottleActionBar: View {
 
                                     Telemetry.capture(.firstProgramLaunchAttempted)
                                     if url.pathExtension == "bat" {
-                                        try await Wine.runBatchFile(url: url, bottle: bottle)
+                                        try await SafeProgramLauncher.runBatchFile(
+                                            at: url,
+                                            bottle: bottle
+                                        )
                                     } else {
-                                        try await Wine.runProgram(at: url, bottle: bottle)
+                                        let session = try await SafeProgramLauncher.launch(
+                                            at: url,
+                                            bottle: bottle
+                                        )
+                                        Task {
+                                            _ = try? await session.waitForExit()
+                                        }
                                     }
                                     await MainActor.run {
                                         withAnimation {

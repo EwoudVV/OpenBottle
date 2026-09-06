@@ -52,7 +52,7 @@ struct WhiskyWineDownloadView: View {
     /// survives an app relaunch, and the next attempt resumes it instead of
     /// starting the full download over.
     static let archiveDestination: URL = .cachesDirectory
-        .appending(path: Bundle.whiskyBundleIdentifier)
+        .appending(path: ProductIdentity.appBundleIdentifier)
         .appending(path: "RuntimeDownload")
         .appending(path: "Libraries.tar.gz")
 

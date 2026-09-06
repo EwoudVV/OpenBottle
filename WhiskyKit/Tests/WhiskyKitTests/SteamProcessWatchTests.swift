@@ -102,4 +102,29 @@ struct SteamProcessWatchTests {
 
         #expect(running == [4_576_510])
     }
+
+    @Test("Waits for consecutive absent process checks")
+    func waitsUntilNone() async {
+        let watch = makeWatch(responses: [
+            ["game.exe"],
+            [],
+            ["game.exe"],
+            [],
+            []
+        ])
+
+        #expect(await watch.waitUntilNone(of: ["game.exe"], consecutiveChecks: 2))
+    }
+
+    @Test("Cancellation stops the exit wait")
+    func cancellationStopsExitWait() async {
+        let watch = makeWatch(responses: [["game.exe"]], pollInterval: .milliseconds(20))
+        let task = Task {
+            await watch.waitUntilNone(of: ["game.exe"])
+        }
+        try? await Task.sleep(for: .milliseconds(50))
+        task.cancel()
+
+        #expect(await task.value == false)
+    }
 }

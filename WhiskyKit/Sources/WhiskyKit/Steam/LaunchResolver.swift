@@ -23,7 +23,7 @@ import Foundation
 /// Nothing in a plan is persisted: GameDB recommendations are applied
 /// per launch, so two games in the same bottle never fight over
 /// bottle-wide settings.
-public struct LaunchPlan {
+public struct LaunchPlan: Sendable {
     /// Per-launch program overrides: the user's persisted overrides with
     /// GameDB variant settings filling any field the user left unset.
     public let overrides: ProgramOverrides
@@ -59,8 +59,22 @@ public enum LaunchResolver {
         appliedConfiguration: GameConfigSnapshot? = nil,
         entries: [GameDBEntry]? = nil
     ) -> LaunchPlan {
+        plan(
+            metadata: ProgramMetadata(exeName: exeName ?? "", steamAppId: steamAppId),
+            userOverrides: userOverrides,
+            appliedConfiguration: appliedConfiguration,
+            entries: entries
+        )
+    }
+
+    /// Builds the same per-launch plan for a direct executable or another store.
+    public static func plan(
+        metadata: ProgramMetadata,
+        userOverrides: ProgramOverrides? = nil,
+        appliedConfiguration: GameConfigSnapshot? = nil,
+        entries: [GameDBEntry]? = nil
+    ) -> LaunchPlan {
         let database = entries ?? GameDBLoader.loadDefaults()
-        let metadata = ProgramMetadata(exeName: exeName ?? "", steamAppId: steamAppId)
 
         guard let match = GameMatcher.bestMatch(metadata: metadata, against: database) else {
             return LaunchPlan(

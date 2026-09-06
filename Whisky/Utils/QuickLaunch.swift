@@ -199,14 +199,17 @@ enum QuickLaunch {
     private static func launch(_ target: Target) {
         switch target {
         case let .steam(game, bottle):
-            do {
-                _ = try SteamLauncher.launch(
-                    appId: game.appId, bottle: bottle, installURL: game.installURL
-                )
-            } catch {
-                presentLaunchFailure(
-                    programName: target.displayName, error: error.localizedDescription
-                )
+            let orchestrator = SteamClientOrchestrator(
+                bottle: bottle,
+                launchSafety: SteamLaunchSafetyController.live()
+            )
+            orchestrator.launch(game)
+            Task {
+                await orchestrator.waitUntilFinished(game)
+                if let error = orchestrator.launchError {
+                    presentLaunchFailure(programName: target.displayName, error: error)
+                }
+                orchestrator.stop()
             }
         case let .pin(pin, bottle):
             launch(pin: pin, in: bottle)

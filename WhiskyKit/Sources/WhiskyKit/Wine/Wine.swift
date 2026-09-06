@@ -1042,7 +1042,7 @@ public extension Wine {
     /// timestamps as filenames.
     static let logsFolder = FileManager.default.urls(
         for: .libraryDirectory, in: .userDomainMask
-    )[0].appending(path: "Logs").appending(path: Bundle.whiskyBundleIdentifier)
+    )[0].appending(path: "Logs").appending(path: ProductIdentity.appBundleIdentifier)
 
     /// Enforces log retention policy by deleting the oldest `.log` files until total size is under the limit.
     ///

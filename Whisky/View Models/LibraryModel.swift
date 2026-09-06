@@ -245,7 +245,11 @@ extension LibraryModel {
             Task {
                 defer { programLaunching.remove(url) }
                 do {
-                    try await Wine.runProgram(at: url, bottle: bottle)
+                    let session = try await SafeProgramLauncher.launch(
+                        at: url,
+                        bottle: bottle
+                    )
+                    _ = try await session.waitForExit()
                 } catch {
                     launchError = error.localizedDescription
                 }
