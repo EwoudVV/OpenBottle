@@ -67,7 +67,7 @@ the first direct test launch also exposed a save-path bug: its Windows working
 directory was `C:\windows`, so that session created a separate fresh save instead
 of changing the older Steam-managed save beside the game. both trees were copied
 into one timestamped backup and all 812 payload hashes passed verification. the
-the launcher was then changed to use Steam's `-applaunch 1279510` path, wait for
+launcher was then changed to use Steam's `-applaunch 1279510` path, wait for
 Steam Cloud's per-game evaluation after exit, and refuse to run while a separate
 save still needed a deliberate choice.
 
@@ -76,12 +76,26 @@ game-folder copy, so the cloud-modified state was preserved in a second verified
 rollback backup and the 44-file local session was restored byte-for-byte. the
 launcher now refuses to run unless Steam's per-game `cloudenabled` value is `0`,
 starts Steam with `-offline`, records the active save hash before and after play,
-and checks that the cloud log did not receive another sync event.
+and rejects any cloud mode that is not explicitly marked `Sync Disabled`.
 
 a short 120 FPS startup check confirmed the game process used the Screw Drivers
 install folder as its working directory. Steam logged `AC Launch,Sync Disabled`,
 the active save hash stayed unchanged, every renderer restoration hash matched,
 and the bottle returned to DXVK.
+
+## latency comparison
+
+the user then played both local-only MetalFX modes back to back:
+
+| cap | sampled play time | average game CPU | average resident memory | result |
+| --- | ---: | ---: | ---: | --- |
+| 60 FPS | 3:29 | 206.47% | 5224.8 MB | more input latency |
+| 120 FPS | 1:49 | 238.32% | 4815.4 MB | noticeably more responsive |
+
+these were normal play sessions rather than identical scripted routes, so the CPU
+and memory difference is directional. the input result is clear enough to select
+120 FPS on this M1 Max. both runs used the game folder, advanced the local save,
+logged cloud sync disabled, and restored the original renderer files.
 
 ## what this says
 
@@ -108,23 +122,18 @@ installed.
 the raw logs stay out of Git because they contain local paths and Steam account
 details. this file contains the scrubbed result.
 
-## next test
+## selected profile
 
 the working visual configuration is DXMT with:
 
 ```text
 DXMT_METALFX_SPATIAL_SWAPCHAIN=1
-DXMT_CONFIG=d3d11.preferredMaxFrameRate=60;d3d11.metalSpatialUpscaleFactor=2.0
+DXMT_CONFIG=d3d11.preferredMaxFrameRate=120;d3d11.metalSpatialUpscaleFactor=2.0
 ```
 
 the 2x factor maps the current 1728x1117 render to the panel's 3456x2234 pixel
-grid. DXMT already keeps this swapchain at one queued frame, so there is no extra
-queue depth to remove. the next controlled comparison is the same route at 60
-and 120 FPS. 120 FPS cuts the target frame interval from about 16.7 ms to 8.3 ms,
-but the earlier uncapped result shows that it will probably use substantially more
-CPU.
-
-after that, one repeatable vehicle calculation and one map load need event markers
-and process samples. those operations are the useful CPU test; an idle menu cannot
-tell us whether Wine, Rosetta, synchronization, or the game itself is responsible
-for their delay.
+grid. DXMT already keeps this swapchain at one queued frame. 120 FPS costs more
+CPU than 60 FPS, but the tested M1 Max has enough headroom and the latency
+improvement matters more. this closes Screw Drivers as the first proof case; it
+stays in the regression matrix while product work moves to other engines and
+launch paths.

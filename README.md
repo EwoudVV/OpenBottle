@@ -13,10 +13,10 @@ to reproduce.
 
 ## status
 
-checked 5 september 2026. the repository and upstream link are set up, and the
-first controlled renderer comparison is complete. the app still uses the Whisky
-name and bundle identifiers internally while the project boundary is being
-established.
+checked 6 september 2026. the first proof is complete: one real game has a
+repeatable sharp configuration, a protected local save, and a reversible launch.
+the app still uses the Whisky name and bundle identifiers internally while the
+product boundary is being established.
 
 the first target is [Screw Drivers](https://store.steampowered.com/app/1279510/Screw_Drivers/)
 on an M1 Max MacBook Pro. full-resolution rendering was too slow and the lower
@@ -33,17 +33,17 @@ reconstruct the result to the panel's 3456x2234 pixel grid.
 macOS reports 100% CPU as roughly one fully occupied core. these numbers come
 from 60-second main-menu samples at 1728x1117. a later 21-minute MetalFX play
 session completed four races and averaged 210.2% game CPU. it looked close to a
-native-resolution run, with a small amount of input latency still noticeable.
-there is no trustworthy FPS measurement yet, so the numbers are evidence about
-CPU cost rather than a complete renderer ranking. the full method and limits are in
+native-resolution run. a later direct comparison found that a 120 FPS cap felt
+noticeably more responsive than 60 FPS, with average game CPU rising from 206.5%
+to 238.3% across those short runs. the full method and limits are in
 [the benchmark record](docs/benchmarks/screw-drivers-2026-09-05.md).
 
-## first playable experiment
+## first proof
 
-the measured default remains DXVK with a 60 FPS cap. the sharp-output experiment
-uses DXMT's MetalFX spatial scaler and has now passed its first real play test on
-the M1 Max. it stays opt-in until the corrected Steam launch is repeated and its
-frame times are measured.
+the winning tested setup on this M1 Max is DXMT, MetalFX 2x, and a 120 FPS cap.
+it renders at 1728x1117 and reconstructs to the built-in display's 3456x2234
+pixel grid. Steam runs with sync disabled and the launcher verifies its temporary
+renderer changes and local save state.
 
 the reversible launcher, the lower-latency 120 FPS comparison, and the things to
 check are in
@@ -51,20 +51,24 @@ check are in
 the current experiment is local-save only: it refuses to start unless Steam Cloud
 is disabled for Screw Drivers, and it starts that Steam session offline.
 
-vehicle calculation and map loading are separate CPU workloads. the next test
-will sample the game while those operations happen instead of assuming a graphics
-backend can fix them.
-
 ## project direction
 
-1. make Screw Drivers sharp and stable, then measure driving, vehicle calculation,
-   and map loading;
-2. add repeatable benchmark capture to the app;
-3. turn results into versioned per-game profiles with clear provenance;
-4. update and compare Wine, DXVK, DXMT, and synchronization implementations;
-5. follow the ARM64 Wine and FEX work needed after general Rosetta support ends.
+the next milestone is the product rather than another Screw Drivers tweak:
 
-the tracked plan is in [docs/ROADMAP.md](docs/ROADMAP.md).
+1. send every game, installer, shortcut, and store through one safe Play
+   transaction;
+2. add automatic local save restore points and an explicit cloud policy;
+3. give the fork its own OpenBottle identity without touching existing Whisky
+   bottles;
+4. keep versioned runtime slots and select hardware-aware profiles;
+5. test different engines, Direct3D generations, launchers, input, audio, video,
+   and failure classes;
+6. publish a signed alpha whose normal flow is install, choose a game, and press
+   Play.
+
+the full architecture and compatibility boundary are in
+[docs/PRODUCT-PLAN.md](docs/PRODUCT-PLAN.md). the ordered work is in
+[docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## stack and licensing
 

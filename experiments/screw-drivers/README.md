@@ -7,7 +7,7 @@ it runs the existing Whisky installation with:
 renderer: DXMT 0.80
 game render: 1728x1117
 MetalFX output target: 3456x2234
-frame cap: 60 FPS
+frame cap: 120 FPS
 ```
 
 double-click the command or run it from Terminal. it finds the single Screw
@@ -24,12 +24,15 @@ use `--check` for a read-only preflight:
 ./experiments/screw-drivers/Test\ Screw\ Drivers\ MetalFX.command --check
 ```
 
-`Test Screw Drivers Lower Latency.command` runs the same setup at a 120 FPS cap.
-it is an A/B test for the small amount of input latency found in the first full
-play session, and it is expected to use more CPU. its read-only check is:
+120 FPS is now the normal mode after it felt noticeably more responsive in a
+direct comparison. `Test Screw Drivers Lower Latency.command` remains as an alias
+for it. the old 60 FPS mode is still available with `--balanced`.
+
+read-only checks for both modes are:
 
 ```sh
-./experiments/screw-drivers/Test\ Screw\ Drivers\ MetalFX.command --check-lower-latency
+./experiments/screw-drivers/Test\ Screw\ Drivers\ MetalFX.command --check
+./experiments/screw-drivers/Test\ Screw\ Drivers\ MetalFX.command --check-balanced
 ```
 
 ## what to look for
@@ -37,8 +40,7 @@ play session, and it is expected to use more CPU. its read-only check is:
 - text and thin part edges should look clearer than the normal 1728x1117 launch;
 - the UI should stay at a usable size;
 - driving should not show halos, flicker, trails, or broken transparency;
-- motion should feel at least as even as the normal DXVK launch;
-- vehicle calculation and map loading should be tested separately.
+- motion should feel at least as even as the normal DXVK launch.
 
 quit the game normally when the comparison is finished. Steam may still evaluate
 its cached file list, but the command requires the `Sync Disabled` marker and

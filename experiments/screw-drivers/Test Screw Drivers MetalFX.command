@@ -3,25 +3,28 @@
 set -euo pipefail
 
 action=run
-profile=balanced
-frame_cap=60
+profile=lower-latency
+frame_cap=120
 case "${1:-}" in
-    ""|run)
+    ""|run|--lower-latency)
         ;;
     --check)
         action=check
         ;;
-    --lower-latency)
-        profile=lower-latency
-        frame_cap=120
+    --balanced)
+        profile=balanced
+        frame_cap=60
+        ;;
+    --check-balanced)
+        action=check
+        profile=balanced
+        frame_cap=60
         ;;
     --check-lower-latency)
         action=check
-        profile=lower-latency
-        frame_cap=120
         ;;
     *)
-        echo "Usage: $0 [--check|--lower-latency|--check-lower-latency]" >&2
+        echo "Usage: $0 [--check|--balanced|--check-balanced|--lower-latency]" >&2
         exit 64
         ;;
 esac
@@ -408,10 +411,6 @@ done
 
 cp -p "$player_log" "$run_dir/Player.log" 2>/dev/null || true
 echo "ended_utc=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$run_dir/run-info.txt"
-if [[ -f "$active_save" ]]; then
-    echo "active_save_after_sha256=$(shasum -a 256 "$active_save" | awk '{print $1}')" \
-        >> "$run_dir/run-info.txt"
-fi
 
 echo "Checking that Steam Cloud stayed inactive..."
 for _ in 1 2 3 4 5; do
@@ -426,7 +425,8 @@ fi
 unexpected_sync="$(grep -F "[AppID $app_id] Starting sync" "$run_dir/cloud-log-delta.log" \
     | grep -F -v 'Starting sync (init,)' \
     | grep -F -v 'Starting sync (eval,)' \
-    | grep -F -v 'Starting sync (AC Launch,Sync Disabled,)' || true)"
+    | grep -F -v 'Starting sync (AC Launch,Sync Disabled,)' \
+    | grep -F -v 'Starting sync (AC Exit,Sync Disabled,)' || true)"
 if [[ -n "$unexpected_sync" ]]; then
     echo "cloud_guard=unexpected-mode" >> "$run_dir/run-info.txt"
     printf '%s\n' "$unexpected_sync" > "$run_dir/unexpected-cloud-mode.log"
@@ -447,6 +447,11 @@ if [[ -f "$separate_save" ]]; then
     echo "save_location_error=C:\\windows" >> "$run_dir/run-info.txt"
     echo "Warning: this run wrote another separate save under C:\\windows." >&2
     echo "It has been left in place for recovery." >&2
+fi
+
+if [[ -f "$active_save" ]]; then
+    echo "active_save_after_sha256=$(shasum -a 256 "$active_save" | awk '{print $1}')" \
+        >> "$run_dir/run-info.txt"
 fi
 
 restore_original

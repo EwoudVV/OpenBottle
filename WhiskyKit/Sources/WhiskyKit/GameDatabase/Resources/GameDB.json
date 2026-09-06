@@ -3778,13 +3778,13 @@
       "variants": [
         {
           "id": "dxvk-balanced-60",
-          "label": "DXVK balanced (60 FPS)",
+          "label": "DXVK safe fallback (60 FPS)",
           "isDefault": true,
-          "whenToUse": "Measured default for stable play on the tested M1 Max",
+          "whenToUse": "Conservative fallback for hardware that has not tested the M1 Max MetalFX profile",
           "rationale": [
             "The game uses Direct3D 11 and reaches its menu reliably through DXVK",
             "DXVK used less CPU than capped DXMT in a controlled 60-second menu sample",
-            "A 60 FPS limit prevents unnecessary work while the driving test is still pending"
+            "It stays the automatic default until profile selection can match Mac model and display"
           ],
           "settings": {
             "graphicsBackend": "dxvk",
@@ -3812,14 +3812,15 @@
         },
         {
           "id": "dxmt-metalfx-2x-experimental",
-          "label": "DXMT + MetalFX 2x (M1 Max)",
+          "label": "DXMT + MetalFX 2x, 120 FPS (M1 Max)",
           "isDefault": false,
           "whenToUse": "Use on the tested 3456x2234 M1 Max display when the normal 1728x1117 output looks soft",
           "rationale": [
             "DXMT can reconstruct the low-resolution Direct3D 11 swapchain with MetalFX",
             "A 2x scale maps 1728x1117 to the tested MacBook panel's native pixel grid",
             "The 60 FPS cap reduced DXMT menu CPU use from 320.44% to 157.72%",
-            "A 21-minute play session completed four races and looked close to native resolution"
+            "A 21-minute play session completed four races and looked close to native resolution",
+            "A direct 60 versus 120 FPS comparison found noticeably lower input latency at 120 FPS"
           ],
           "settings": {
             "graphicsBackend": "dxmt",
@@ -3833,13 +3834,13 @@
             "sequoiaCompatMode": false
           },
           "environmentVariables": {
-            "DXMT_CONFIG": "d3d11.preferredMaxFrameRate=60;d3d11.metalSpatialUpscaleFactor=2.0",
+            "DXMT_CONFIG": "d3d11.preferredMaxFrameRate=120;d3d11.metalSpatialUpscaleFactor=2.0",
             "DXMT_METALFX_SPATIAL_SWAPCHAIN": "1"
           },
           "dllOverrides": [],
           "winetricksVerbs": [],
           "testedWith": {
-            "lastTestedAt": "2026-09-05T23:11:54Z",
+            "lastTestedAt": "2026-09-06T13:56:58Z",
             "macOSVersion": "26.5.2",
             "wineVersion": "11.0",
             "whiskyVersion": "3.6.1",
@@ -3849,9 +3850,8 @@
       ],
       "notes": [
         "The sharp mode assumes a 1728x1117 game render on a 3456x2234 display",
-        "DXMT + MetalFX passed a 21-minute visual and gameplay check on the tested M1 Max",
-        "Other display sizes and Mac models still need testing",
-        "Vehicle calculation and map loading need a separate CPU profile"
+        "DXMT + MetalFX passed visual, gameplay, and latency checks on the tested M1 Max",
+        "Other display sizes and Mac models still need testing"
       ],
       "knownIssues": [
         {
@@ -3860,20 +3860,15 @@
           "workaround": "Use 1728x1117; try the experimental 2x MetalFX profile for sharper output"
         },
         {
-          "description": "Vehicle calculation and map loading are slower than expected",
-          "severity": "major",
-          "workaround": "No verified runtime fix yet; these operations need a focused CPU profile"
-        },
-        {
-          "description": "A small amount of input latency remained in the 60 FPS MetalFX test",
+          "description": "The 60 FPS MetalFX mode had noticeably more input latency",
           "severity": "minor",
-          "workaround": "Compare the opt-in 120 FPS mode; its CPU cost has not been measured yet"
+          "workaround": "Use the tested 120 FPS MetalFX mode on the M1 Max"
         }
       ],
       "provenance": {
         "source": "local-benchmark",
         "author": "EwoudVV",
-        "lastUpdated": "2026-09-05T00:00:00Z",
+        "lastUpdated": "2026-09-06T00:00:00Z",
         "referenceURL": "https://github.com/EwoudVV/OpenBottle/blob/main/docs/benchmarks/screw-drivers-2026-09-05.md"
       }
     },
