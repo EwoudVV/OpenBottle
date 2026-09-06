@@ -231,12 +231,22 @@ public enum BottleImporter {
     }
 
     private static func requireCapacity(for byteCount: Int64, at root: URL) throws {
-        let parent = root.deletingLastPathComponent()
-        let values = try parent.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+        let probe = existingAncestor(of: root)
+        let values = try probe.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
         guard let available = values.volumeAvailableCapacityForImportantUsage else { return }
         let required = max(byteCount + 536_870_912, byteCount * 11 / 10)
         guard available >= required else {
             throw BottleImportError.insufficientSpace(required: required, available: available)
         }
+    }
+
+    private static func existingAncestor(of suppliedURL: URL) -> URL {
+        var url = suppliedURL.standardizedFileURL
+        while !FileManager.default.fileExists(atPath: url.path(percentEncoded: false)) {
+            let parent = url.deletingLastPathComponent()
+            guard parent != url else { return url }
+            url = parent
+        }
+        return url
     }
 }
