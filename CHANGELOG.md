@@ -39,6 +39,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   initializer from WhiskyKit's public API, along with the `isClickOnce`
   property, so the kit needs a major version bump (#215).
 
+## [0.1.0-alpha.4] - 2026-09-06 (App)
+
+### Fixed
+- A first real Steam launch no longer rejects its completed save snapshot as
+  outside the vault when Foundation gives the vault parent and snapshot parent
+  different URL directory hints. the boundary check now compares their
+  canonical filesystem paths.
+
 ## [0.1.0-alpha.3] - 2026-09-06 (App)
 
 ### Fixed
@@ -928,7 +936,8 @@ When adding entries to this changelog, use the following categories:
 - **Security** - Vulnerability fixes
 - **Documentation** - Documentation-only changes
 
-[Unreleased]: https://github.com/EwoudVV/OpenBottle/compare/app-v0.1.0-alpha.3...HEAD
+[Unreleased]: https://github.com/EwoudVV/OpenBottle/compare/app-v0.1.0-alpha.4...HEAD
+[0.1.0-alpha.4]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.4
 [0.1.0-alpha.3]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.3
 [0.1.0-alpha.2]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.1

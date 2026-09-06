@@ -54,7 +54,9 @@ extension SaveVault {
         guard snapshot.manifest.bottleID == bottleURL.lastPathComponent else {
             throw SaveVaultError.invalidManifest("bottle ID does not match its directory")
         }
-        guard bottleURL.deletingLastPathComponent() == resolvedRoot else {
+        guard Self.normalizedPath(bottleURL.deletingLastPathComponent())
+            == Self.normalizedPath(resolvedRoot)
+        else {
             throw SaveVaultError.snapshotOutsideVault
         }
         return snapshot
