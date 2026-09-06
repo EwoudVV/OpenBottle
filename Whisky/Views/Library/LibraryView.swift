@@ -18,6 +18,7 @@
 
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 import WhiskyKit
 
 /// Everything worth launching, across every bottle, most recently played first.
@@ -32,6 +33,7 @@ import WhiskyKit
 struct LibraryView: View {
     @EnvironmentObject var bottleVM: BottleVM
     @Binding var selectedBottle: URL?
+    @Binding var openedFileURL: URL?
     /// Toggled by the toolbar's refresh button. Folded into the reload trigger
     /// because the bottle list is unchanged by a refresh, so watching only that
     /// left the button spinning without rebuilding anything.
@@ -41,6 +43,8 @@ struct LibraryView: View {
 
     @StateObject private var model = LibraryModel()
     @State private var search: String = ""
+    @State var runtimeSlots: [RuntimeSlot] = []
+    @State var selectedRuntimeSlotID: String?
 
     private var bottles: [Bottle] { bottleVM.bottles.filter(\.isAvailable) }
 
@@ -67,10 +71,14 @@ struct LibraryView: View {
         }
         .navigationTitle("library.title")
         .searchable(text: $search, prompt: Text("library.search"))
-        .toolbar { sortMenu }
+        .toolbar {
+            runtimeMenu
+            sortMenu
+        }
         .toast($model.toast)
         .task(id: reloadTrigger) {
             await model.reload(bottles: bottles)
+            loadRuntimeSlots()
         }
         .onChange(of: sort, initial: true) {
             model.sort = sort
@@ -222,9 +230,30 @@ struct LibraryView: View {
         } description: {
             Text(bottles.isEmpty ? "library.empty.noBottle" : "library.empty.noPrograms")
         } actions: {
+            Button("library.empty.install") {
+                chooseWindowsInstaller()
+            }
+            .buttonStyle(.borderedProminent)
             if let first = bottles.first {
-                Button("library.empty.pinHint") { selectedBottle = first.url }
-                    .buttonStyle(.borderedProminent)
+                Button("library.empty.advanced") { selectedBottle = first.url }
+            }
+        }
+    }
+
+    private func chooseWindowsInstaller() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = [
+            UTType.exe,
+            UTType(exportedAs: "com.microsoft.msi-installer"),
+            UTType(exportedAs: "com.microsoft.msix-package"),
+            UTType(exportedAs: "com.microsoft.appx-package")
+        ]
+        panel.begin { result in
+            if result == .OK {
+                openedFileURL = panel.urls.first
             }
         }
     }

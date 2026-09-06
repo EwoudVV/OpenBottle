@@ -62,14 +62,7 @@ struct SetupView: View {
         .padding()
         .interactiveDismissDisabled()
         .onAppear {
-            // Skip the welcome screen and go straight to the download stage only
-            // once telemetry consent is already decided. WelcomeView is the sole
-            // screen carrying the consent toggle, so on a genuine first run (consent
-            // still undecided) we must show it even when the runtime is missing —
-            // otherwise the opt-in would be unreachable. The only call site
-            // (ContentView) always passes `firstTime: false`, so the consent check,
-            // not `firstTime`, is what keeps the welcome screen reachable.
-            if !firstTime, Telemetry.consent != .undecided, !WhiskyWineInstaller.isWhiskyWineInstalled() {
+            if !firstTime, !WhiskyWineInstaller.isWhiskyWineInstalled() {
                 path = [.whiskyWineDownload]
             }
         }

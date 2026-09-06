@@ -24,17 +24,23 @@ public struct ProgramLaunchPlan: Sendable {
     public let saveSources: [SaveSource]
     public let launchPlan: LaunchPlan
     public let processNames: Set<String>
+    public let entry: GameDBEntry?
+    public let installURL: URL
 
     public init(
         gameID: String,
         saveSources: [SaveSource],
         launchPlan: LaunchPlan,
-        processNames: Set<String>
+        processNames: Set<String>,
+        entry: GameDBEntry?,
+        installURL: URL
     ) {
         self.gameID = gameID
         self.saveSources = saveSources
         self.launchPlan = launchPlan
         self.processNames = processNames
+        self.entry = entry
+        self.installURL = installURL
     }
 }
 
@@ -68,6 +74,12 @@ public enum ProgramLaunchPlanner {
             entry: match?.entry,
             wineUserName: wineUserName
         )
+        var processNames = Set(
+            (match?.entry.exeNames ?? []) + [programURL.lastPathComponent]
+        ).mapLowercased()
+        if ["msi", "msix", "appx"].contains(programURL.pathExtension.lowercased()) {
+            processNames.insert("msiexec.exe")
+        }
         return ProgramLaunchPlan(
             gameID: gameID,
             saveSources: GameSaveDiscovery.merging(
@@ -80,9 +92,9 @@ public enum ProgramLaunchPlanner {
                 appliedConfiguration: appliedConfiguration,
                 entries: entries
             ),
-            processNames: Set(
-                (match?.entry.exeNames ?? []) + [programURL.lastPathComponent]
-            ).mapLowercased()
+            processNames: processNames,
+            entry: match?.entry,
+            installURL: programURL.deletingLastPathComponent()
         )
     }
 

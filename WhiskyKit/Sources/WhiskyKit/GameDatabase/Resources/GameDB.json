@@ -3899,7 +3899,32 @@
             "macOSVersion": "26.5.2",
             "wineVersion": "11.0",
             "whiskyVersion": "3.6.1",
-            "cpuArchitecture": "arm64"
+            "cpuArchitecture": "arm64",
+            "macModel": "MacBookPro18,2",
+            "gpuName": "Apple M1 Max",
+            "memoryGB": 64,
+            "displayWidth": 3456,
+            "displayHeight": 2234,
+            "refreshRate": 120
+          },
+          "constraints": {
+            "cpuArchitectures": [
+              "arm64"
+            ],
+            "macModels": [
+              "MacBookPro18,2"
+            ],
+            "gpuFamilies": [
+              "M1 Max"
+            ],
+            "minimumMemoryGB": 64,
+            "displayWidths": [
+              3456
+            ],
+            "displayHeights": [
+              2234
+            ],
+            "minimumRefreshRate": 119
           }
         },
         {

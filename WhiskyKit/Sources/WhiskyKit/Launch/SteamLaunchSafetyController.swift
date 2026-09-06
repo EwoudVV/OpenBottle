@@ -104,6 +104,35 @@ public struct SteamLaunchSafetyController: Sendable {
         )
     }
 
+    @MainActor
+    public func preflight(
+        game: SteamGame,
+        bottle: Bottle,
+        preparation: SteamLaunchPreparation
+    ) async -> LaunchPreflightReport {
+        let entry = entries.first { $0.steamAppId == game.appId }
+        let userOverrides = SteamLauncher.userOverrides(
+            forInstallURL: game.installURL,
+            bottle: bottle
+        )
+        let plan = LaunchResolver.plan(
+            steamAppId: game.appId,
+            userOverrides: userOverrides,
+            appliedConfiguration: GameConfigSnapshot.load(from: bottle.url),
+            entries: entries
+        )
+        let programURL = preferredExecutable(in: game.installURL, entry: entry)
+        return await LaunchPreflight.evaluate(LaunchPreflightInput(
+            bottleURL: bottle.url,
+            programURL: programURL,
+            installURL: game.installURL,
+            entry: entry,
+            launcher: nil,
+            backend: plan.overrides.graphicsBackend ?? bottle.settings.graphicsBackend,
+            runtime: preparation.runtimeSelection
+        ))
+    }
+
     @discardableResult
     public func markPrepared(
         _ preparation: SteamLaunchPreparation
@@ -181,5 +210,15 @@ public struct SteamLaunchSafetyController: Sendable {
         return try await controller.finish(
             preparation.withSaveSources(plan.sources)
         )
+    }
+
+    private func preferredExecutable(
+        in installURL: URL,
+        entry: GameDBEntry?
+    ) -> URL? {
+        let executables = SteamLibrary.executableURLs(under: installURL)
+        let preferredNames = Set((entry?.exeNames ?? []).map { $0.lowercased() })
+        return executables.first { preferredNames.contains($0.lastPathComponent.lowercased()) }
+            ?? executables.first
     }
 }

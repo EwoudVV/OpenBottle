@@ -61,17 +61,41 @@ public struct GameConstraints: Codable, Sendable, Equatable {
     public let minWineVersion: String?
     /// Backend capabilities required (e.g., ["dxr"]).
     public let requiredBackendCapabilities: [String]?
+    /// Exact Mac model identifiers this configuration supports.
+    public let macModels: [String]?
+    /// GPU or chip-name fragments this configuration supports.
+    public let gpuFamilies: [String]?
+    /// Minimum unified memory in GiB.
+    public let minimumMemoryGB: Int?
+    /// Exact native display widths this configuration was made for.
+    public let displayWidths: [Int]?
+    /// Exact native display heights this configuration was made for.
+    public let displayHeights: [Int]?
+    /// Minimum display refresh rate.
+    public let minimumRefreshRate: Double?
 
     public init(
         cpuArchitectures: [String]? = nil,
         minMacOSVersion: String? = nil,
         minWineVersion: String? = nil,
-        requiredBackendCapabilities: [String]? = nil
+        requiredBackendCapabilities: [String]? = nil,
+        macModels: [String]? = nil,
+        gpuFamilies: [String]? = nil,
+        minimumMemoryGB: Int? = nil,
+        displayWidths: [Int]? = nil,
+        displayHeights: [Int]? = nil,
+        minimumRefreshRate: Double? = nil
     ) {
         self.cpuArchitectures = cpuArchitectures
         self.minMacOSVersion = minMacOSVersion
         self.minWineVersion = minWineVersion
         self.requiredBackendCapabilities = requiredBackendCapabilities
+        self.macModels = macModels
+        self.gpuFamilies = gpuFamilies
+        self.minimumMemoryGB = minimumMemoryGB
+        self.displayWidths = displayWidths
+        self.displayHeights = displayHeights
+        self.minimumRefreshRate = minimumRefreshRate
     }
 
     public init(from decoder: Decoder) throws {
@@ -83,6 +107,12 @@ public struct GameConstraints: Codable, Sendable, Equatable {
             [String].self,
             forKey: .requiredBackendCapabilities
         )
+        self.macModels = try container.decodeIfPresent([String].self, forKey: .macModels)
+        self.gpuFamilies = try container.decodeIfPresent([String].self, forKey: .gpuFamilies)
+        self.minimumMemoryGB = try container.decodeIfPresent(Int.self, forKey: .minimumMemoryGB)
+        self.displayWidths = try container.decodeIfPresent([Int].self, forKey: .displayWidths)
+        self.displayHeights = try container.decodeIfPresent([Int].self, forKey: .displayHeights)
+        self.minimumRefreshRate = try container.decodeIfPresent(Double.self, forKey: .minimumRefreshRate)
     }
 }
 
@@ -100,19 +130,37 @@ public struct TestedWith: Codable, Sendable, Equatable {
     public let whiskyVersion: String?
     /// The CPU architecture used during testing (e.g., "arm64").
     public let cpuArchitecture: String?
+    public let macModel: String?
+    public let gpuName: String?
+    public let memoryGB: Int?
+    public let displayWidth: Int?
+    public let displayHeight: Int?
+    public let refreshRate: Double?
 
     public init(
         lastTestedAt: Date,
         macOSVersion: String,
         wineVersion: String,
         whiskyVersion: String? = nil,
-        cpuArchitecture: String? = nil
+        cpuArchitecture: String? = nil,
+        macModel: String? = nil,
+        gpuName: String? = nil,
+        memoryGB: Int? = nil,
+        displayWidth: Int? = nil,
+        displayHeight: Int? = nil,
+        refreshRate: Double? = nil
     ) {
         self.lastTestedAt = lastTestedAt
         self.macOSVersion = macOSVersion
         self.wineVersion = wineVersion
         self.whiskyVersion = whiskyVersion
         self.cpuArchitecture = cpuArchitecture
+        self.macModel = macModel
+        self.gpuName = gpuName
+        self.memoryGB = memoryGB
+        self.displayWidth = displayWidth
+        self.displayHeight = displayHeight
+        self.refreshRate = refreshRate
     }
 
     public init(from decoder: Decoder) throws {
@@ -122,6 +170,12 @@ public struct TestedWith: Codable, Sendable, Equatable {
         self.wineVersion = try container.decode(String.self, forKey: .wineVersion)
         self.whiskyVersion = try container.decodeIfPresent(String.self, forKey: .whiskyVersion)
         self.cpuArchitecture = try container.decodeIfPresent(String.self, forKey: .cpuArchitecture)
+        self.macModel = try container.decodeIfPresent(String.self, forKey: .macModel)
+        self.gpuName = try container.decodeIfPresent(String.self, forKey: .gpuName)
+        self.memoryGB = try container.decodeIfPresent(Int.self, forKey: .memoryGB)
+        self.displayWidth = try container.decodeIfPresent(Int.self, forKey: .displayWidth)
+        self.displayHeight = try container.decodeIfPresent(Int.self, forKey: .displayHeight)
+        self.refreshRate = try container.decodeIfPresent(Double.self, forKey: .refreshRate)
     }
 }
 
@@ -279,6 +333,8 @@ public struct GameConfigVariant: Codable, Sendable, Equatable {
     public let winetricksVerbs: [String]?
     /// Information about when and how this variant was tested.
     public let testedWith: TestedWith?
+    /// Hardware constraints that must match before this variant is selected automatically.
+    public let constraints: GameConstraints?
 
     public init(
         id: String,
@@ -290,7 +346,8 @@ public struct GameConfigVariant: Codable, Sendable, Equatable {
         environmentVariables: [String: String]? = nil,
         dllOverrides: [DLLOverrideEntry]? = nil,
         winetricksVerbs: [String]? = nil,
-        testedWith: TestedWith? = nil
+        testedWith: TestedWith? = nil,
+        constraints: GameConstraints? = nil
     ) {
         self.id = id
         self.label = label
@@ -302,6 +359,7 @@ public struct GameConfigVariant: Codable, Sendable, Equatable {
         self.dllOverrides = dllOverrides
         self.winetricksVerbs = winetricksVerbs
         self.testedWith = testedWith
+        self.constraints = constraints
     }
 
     public init(from decoder: Decoder) throws {
@@ -322,6 +380,7 @@ public struct GameConfigVariant: Codable, Sendable, Equatable {
         self.dllOverrides = try container.decodeIfPresent([DLLOverrideEntry].self, forKey: .dllOverrides)
         self.winetricksVerbs = try container.decodeIfPresent([String].self, forKey: .winetricksVerbs)
         self.testedWith = try container.decodeIfPresent(TestedWith.self, forKey: .testedWith)
+        self.constraints = try container.decodeIfPresent(GameConstraints.self, forKey: .constraints)
     }
 }
 

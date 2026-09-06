@@ -137,16 +137,6 @@ public final class SteamClientOrchestrator: ObservableObject {
         launchTasks[game.appId] = Task { await performLaunch(game) }
     }
 
-    /// Waits until launch preparation and every owned exit cleanup task finish.
-    public func waitUntilFinished(
-        _ game: SteamGame,
-        pollInterval: Duration = .milliseconds(200)
-    ) async {
-        while phases[game.appId] != nil || !exitMonitorTasks.isEmpty {
-            try? await Task.sleep(for: pollInterval)
-        }
-    }
-
     /// Polls the bottle's process list so the library can show which games
     /// are running, including ones started outside Whisky.
     public func startTracking(games: [SteamGame]) {
@@ -195,17 +185,6 @@ public final class SteamClientOrchestrator: ObservableObject {
         driver.shutdown()
     }
 
-    /// Whether Play should apply Steam's launcher fixes to this bottle.
-    ///
-    /// Skipped in manual mode: the user picked that launcher and that compat
-    /// setting, and Play must not quietly overrule either. Skipped too when
-    /// the bottle is already configured for Steam, so a launch does not
-    /// re-persist settings it did not change.
-    public static func shouldApplyLauncherFixes(settings: BottleSettings) -> Bool {
-        guard settings.launcherMode == .auto else { return false }
-        return !(settings.launcherCompatibilityMode && settings.detectedLauncher == .steam)
-    }
-
     // MARK: - Launch sequence
 
     private func performLaunch(_ game: SteamGame) async {
@@ -237,6 +216,7 @@ public final class SteamClientOrchestrator: ObservableObject {
                 identifier: transactionID ?? UUID()
             )
             if let preparation {
+                guard await passesPreflight(game, preparation: preparation) else { return }
                 _ = try await launchSafety?.markPrepared(preparation)
             }
         } catch {
@@ -247,31 +227,37 @@ public final class SteamClientOrchestrator: ObservableObject {
         }
         if await recordCancellationIfNeeded(preparation) { return }
 
-        guard await ensureSteamClient(
-            steamExe,
-            preparation: preparation,
-            offline: offline
-        )
-        else { return }
-        guard await requestLaunch(
+        await runPreparedLaunch(
             game,
+            steamExe: steamExe,
             preparation: preparation,
             offline: offline
         )
-        else { return }
-        guard await observeGameStart(game, preparation: preparation) else { return }
-        await beginExitMonitoring(game, preparation: preparation)
     }
 
-    private func resolvedOfflinePolicy(for game: SteamGame) async -> Bool? {
-        do {
-            return try await launchSafety?.savePolicy(
-                for: game,
-                bottleURL: bottle.url
-            ) == .localOnly
-        } catch {
-            launchError = error.localizedDescription
-            return nil
+    private func runPreparedLaunch(
+        _ game: SteamGame,
+        steamExe: URL,
+        preparation: SteamLaunchPreparation?,
+        offline: Bool
+    ) async {
+        let libraryURL = preparation?.runtimeSelection.libraryURL
+            ?? WhiskyWineInstaller.libraryFolder
+        await RuntimeContext.withLibrary(libraryURL) {
+            guard await ensureSteamClient(
+                steamExe,
+                preparation: preparation,
+                offline: offline
+            )
+            else { return }
+            guard await requestLaunch(
+                game,
+                preparation: preparation,
+                offline: offline
+            )
+            else { return }
+            guard await observeGameStart(game, preparation: preparation) else { return }
+            await beginExitMonitoring(game, preparation: preparation)
         }
     }
 

@@ -67,7 +67,6 @@ struct OpenBottleApp: App {
             updaterDelegate: nil,
             userDriverDelegate: SparkleUpdaterDelegate.shared
         )
-        Telemetry.startIfConsented()
     }
 
     /// Installs the MetalFX bridge into runtimes that already hold the GPTK

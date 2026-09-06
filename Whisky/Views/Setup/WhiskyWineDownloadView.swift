@@ -99,7 +99,7 @@ struct WhiskyWineDownloadView: View {
             Task {
                 diagnostics.reset()
                 diagnostics.record("Entered download stage")
-                diagnostics.record("Telemetry consent: \(Telemetry.consent.rawValue)")
+                diagnostics.record("Telemetry: disabled in OpenBottle")
                 Telemetry.capture(.runtimeInstallStarted)
                 await fetchVersionAndDownload()
             }

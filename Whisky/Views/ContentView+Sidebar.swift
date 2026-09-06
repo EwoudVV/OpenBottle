@@ -120,7 +120,11 @@ extension ContentView {
                     .id(bottle.url)
             }
         } else if bottleVM.countActive() > 0 {
-            LibraryView(selectedBottle: $selected, refresh: $triggerRefresh)
+            LibraryView(
+                selectedBottle: $selected,
+                openedFileURL: $openedFileURL,
+                refresh: $triggerRefresh
+            )
         } else {
             if bottleVM.bottles.isEmpty || bottleVM.countActive() == 0, bottlesLoaded {
                 VStack {

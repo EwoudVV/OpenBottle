@@ -176,6 +176,11 @@ struct ContentView: View {
                 showProcessCloseAlert(for: oldBottle)
             }
         }
+        .onChange(of: showSetup) { _, isShowing in
+            if !isShowing {
+                createDefaultBottleIfNeeded()
+            }
+        }
         .handlesExternalEvents(preferring: [], allowing: ["*"])
         .onOpenURL { url in
             if QuickLaunch.handle(url) { return }
@@ -214,6 +219,8 @@ struct ContentView: View {
 
             if !WhiskyWineInstaller.isWhiskyWineInstalled() {
                 showSetup = true
+            } else {
+                createDefaultBottleIfNeeded()
             }
             let task = Task.detached {
                 await WhiskyWineInstaller.shouldUpdateWhiskyWine()
@@ -235,10 +242,21 @@ struct ContentView: View {
                 let response = alert.runModal()
 
                 if response == .alertFirstButtonReturn {
-                    WhiskyWineInstaller.uninstall()
                     showSetup = true
                 }
             }
         }
+    }
+
+    private func createDefaultBottleIfNeeded() {
+        guard bottleVM.bottles.isEmpty,
+              WhiskyWineInstaller.isWhiskyWineInstalled(),
+              newlyCreatedBottleURL == nil
+        else { return }
+        newlyCreatedBottleURL = bottleVM.createNewBottle(
+            bottleName: "Games",
+            winVersion: .win10,
+            bottleURL: BottleData.defaultBottleDir
+        )
     }
 }

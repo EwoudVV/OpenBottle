@@ -74,6 +74,7 @@ public struct LaunchTransactionRecord: Codable, Equatable, Identifiable, Sendabl
     public let id: UUID
     public let bottleID: String
     public let gameID: String
+    public let runtimeSlotID: String?
     public private(set) var stage: LaunchTransactionStage
     public let createdAt: Date
     public private(set) var updatedAt: Date
@@ -86,6 +87,7 @@ public struct LaunchTransactionRecord: Codable, Equatable, Identifiable, Sendabl
         id: UUID,
         bottleID: String,
         gameID: String,
+        runtimeSlotID: String? = nil,
         stage: LaunchTransactionStage,
         createdAt: Date,
         updatedAt: Date,
@@ -97,6 +99,7 @@ public struct LaunchTransactionRecord: Codable, Equatable, Identifiable, Sendabl
         self.id = id
         self.bottleID = bottleID
         self.gameID = gameID
+        self.runtimeSlotID = runtimeSlotID
         self.stage = stage
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -174,11 +177,15 @@ public actor LaunchTransactionJournal {
     public func begin(
         bottleID: String,
         gameID: String,
+        runtimeSlotID: String? = nil,
         identifier: UUID = UUID(),
         at date: Date = Date()
     ) throws -> LaunchTransactionRecord {
         try Self.validateIdentifier(bottleID)
         try Self.validateIdentifier(gameID)
+        if let runtimeSlotID {
+            try Self.validateIdentifier(runtimeSlotID)
+        }
         let url = recordURL(for: identifier)
         guard !FileManager.default.fileExists(atPath: url.path(percentEncoded: false)) else {
             throw LaunchTransactionError.recordAlreadyExists(identifier)
@@ -188,6 +195,7 @@ public actor LaunchTransactionJournal {
             id: identifier,
             bottleID: bottleID,
             gameID: gameID,
+            runtimeSlotID: runtimeSlotID,
             stage: .created,
             createdAt: date,
             updatedAt: date
@@ -326,6 +334,9 @@ public actor LaunchTransactionJournal {
         }
         try Self.validateIdentifier(record.bottleID)
         try Self.validateIdentifier(record.gameID)
+        if let runtimeSlotID = record.runtimeSlotID {
+            try Self.validateIdentifier(runtimeSlotID)
+        }
         if let saveSnapshotID = record.saveSnapshotID {
             try Self.validateIdentifier(saveSnapshotID)
         }

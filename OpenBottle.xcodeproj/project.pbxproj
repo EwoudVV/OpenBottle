@@ -25,7 +25,6 @@
 		67D278512BC5907E006F9A1E /* ActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67D278502BC5907E006F9A1E /* ActionView.swift */; };
 		689B4F6DF3B8006E89E1395F /* LauncherDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA88CFEB38031323229CD377 /* LauncherDiagnostics.swift */; };
 		6E064B1229DD32A200D9A2D2 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 6E064B1129DD32A200D9A2D2 /* Sparkle */; };
-		7A0510A32F5A000000000003 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 7A0510A22F5A000000000002 /* PostHog */; };
 		6E064B1429DD331F00D9A2D2 /* SparkleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E064B1329DD331F00D9A2D2 /* SparkleView.swift */; };
 		6E17B6462AF3FDC100831173 /* PinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17B6452AF3FDC100831173 /* PinView.swift */; };
 		6E17B6492AF4118F00831173 /* EnvironmentArgView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17B6482AF4118F00831173 /* EnvironmentArgView.swift */; };
@@ -97,6 +96,7 @@
 		C1A2B3C4E5F60601A9B0C1D6 /* AudioFindingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A2B3C4E5F60601A9B0C1D7 /* AudioFindingsView.swift */; };
 		C1A2B3C4E5F60601A9B0C1D8 /* AudioConfigSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A2B3C4E5F60601A9B0C1D9 /* AudioConfigSection.swift */; };
 		C1A2B3C4E5F60601A9B0F2D8 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A2B3C4E5F60601A9B0F2D9 /* LibraryView.swift */; };
+		A9B8C7D6E5F4010203040506 /* LibraryView+Runtime.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B8C7D6E5F4010203040507 /* LibraryView+Runtime.swift */; };
 		C1A2B3C4E5F60601A9B0F1D8 /* LibraryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A2B3C4E5F60601A9B0F1D9 /* LibraryCard.swift */; };
 		C1A2B3C4E5F60601A9B0D1D8 /* DiscordConfigSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A2B3C4E5F60601A9B0D1D9 /* DiscordConfigSection.swift */; };
 		C1A2B3C4E5F60601A9B0C2D0 /* AudioTroubleshootingWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A2B3C4E5F60601A9B0C2D1 /* AudioTroubleshootingWizardView.swift */; };
@@ -296,6 +296,7 @@
 		C1A2B3C4E5F60601A9B0C1D7 /* AudioFindingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFindingsView.swift; sourceTree = "<group>"; };
 		C1A2B3C4E5F60601A9B0C1D9 /* AudioConfigSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioConfigSection.swift; sourceTree = "<group>"; };
 		C1A2B3C4E5F60601A9B0F2D9 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LibraryView.swift; path = Whisky/Views/Library/LibraryView.swift; sourceTree = SOURCE_ROOT; };
+		A9B8C7D6E5F4010203040507 /* LibraryView+Runtime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "LibraryView+Runtime.swift"; path = "Whisky/Views/Library/LibraryView+Runtime.swift"; sourceTree = SOURCE_ROOT; };
 		C1A2B3C4E5F60601A9B0F1D9 /* LibraryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LibraryCard.swift; path = Whisky/Views/Library/LibraryCard.swift; sourceTree = SOURCE_ROOT; };
 		C1A2B3C4E5F60601A9B0D1D9 /* DiscordConfigSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscordConfigSection.swift; sourceTree = "<group>"; };
 		C1A2B3C4E5F60601A9B0C2D1 /* AudioTroubleshootingWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTroubleshootingWizardView.swift; sourceTree = "<group>"; };
@@ -363,7 +364,6 @@
 			files = (
 				8C2AEFC82AED79B700CB568F /* WhiskyKit in Frameworks */,
 				6E064B1229DD32A200D9A2D2 /* Sparkle in Frameworks */,
-				7A0510A32F5A000000000003 /* PostHog in Frameworks */,
 				EB58FB552A499896002DC184 /* SemanticVersion in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -458,6 +458,7 @@
 			children = (
 				C1A2B3C4E5F60601A9B0C1D9 /* AudioConfigSection.swift */,
 				C1A2B3C4E5F60601A9B0F2D9 /* LibraryView.swift */,
+				A9B8C7D6E5F4010203040507 /* LibraryView+Runtime.swift */,
 				C1A2B3C4E5F60601A9B0F1D9 /* LibraryCard.swift */,
 				C1A2B3C4E5F60601A9B0D1D9 /* DiscordConfigSection.swift */,
 				6E40498029CCA8B0006E3F1B /* BottleView.swift */,
@@ -773,7 +774,6 @@
 			name = OpenBottle;
 			packageProductDependencies = (
 				6E064B1129DD32A200D9A2D2 /* Sparkle */,
-				7A0510A22F5A000000000002 /* PostHog */,
 				EB58FB542A499896002DC184 /* SemanticVersion */,
 				8C2AEFC72AED79B700CB568F /* WhiskyKit */,
 			);
@@ -896,7 +896,6 @@
 				6E064B1029DD32A200D9A2D2 /* XCRemoteSwiftPackageReference "Sparkle" */,
 				EB58FB532A499896002DC184 /* XCRemoteSwiftPackageReference "SemanticVersion" */,
 				6E5967682A9A421800D64F70 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
-				7A0510A12F5A000000000001 /* XCRemoteSwiftPackageReference "posthog-ios" */,
 				8C2AEFC62AED79B700CB568F /* XCLocalSwiftPackageReference "WhiskyKit" */,
 			);
 			productRefGroup = 6E40495329CCA19C006E3F1B /* Products */;
@@ -1056,6 +1055,7 @@
 				C1A2B3C4E5F60601A9B0C1D6 /* AudioFindingsView.swift in Sources */,
 				C1A2B3C4E5F60601A9B0C1D8 /* AudioConfigSection.swift in Sources */,
 				C1A2B3C4E5F60601A9B0F2D8 /* LibraryView.swift in Sources */,
+				A9B8C7D6E5F4010203040506 /* LibraryView+Runtime.swift in Sources */,
 				C1A2B3C4E5F60601A9B0F1D8 /* LibraryCard.swift in Sources */,
 				C1A2B3C4E5F60601A9B0D1D8 /* DiscordConfigSection.swift in Sources */,
 				C1A2B3C4E5F60601A9B0C2D0 /* AudioTroubleshootingWizardView.swift in Sources */,
@@ -1551,14 +1551,6 @@
 				minimumVersion = 1.2.3;
 			};
 		};
-		7A0510A12F5A000000000001 /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/PostHog/posthog-ios.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 3.58.0;
-			};
-		};
 		EB58FB532A499896002DC184 /* XCRemoteSwiftPackageReference "SemanticVersion" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SwiftPackageIndex/SemanticVersion";
@@ -1574,11 +1566,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 6E064B1029DD32A200D9A2D2 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
-		};
-		7A0510A22F5A000000000002 /* PostHog */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 7A0510A12F5A000000000001 /* XCRemoteSwiftPackageReference "posthog-ios" */;
-			productName = PostHog;
 		};
 		6E59676A2A9A424900D64F70 /* ArgumentParser */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -152,8 +152,9 @@ final class SteamSaveSafetyControllerTests: XCTestCase {
         XCTAssertEqual(inventory.verified.count, 2)
         XCTAssertEqual(inventory.verified.map(\.manifest.createdAt), [
             Date(timeIntervalSince1970: 3),
-            Date(timeIntervalSince1970: 2)
+            Date(timeIntervalSince1970: 3)
         ])
+        XCTAssertTrue(inventory.verified.contains { $0.manifest.id.hasPrefix("post-") })
     }
 
     private func applyingRecord(

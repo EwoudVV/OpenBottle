@@ -18,7 +18,38 @@
 
 import Foundation
 
+public extension LaunchSafetyPreparation {
+    func withSaveSources(_ sources: [SaveSource]) -> LaunchSafetyPreparation {
+        LaunchSafetyPreparation(
+            transactionID: transactionID,
+            bottleURL: bottleURL,
+            bottleID: bottleID,
+            gameID: gameID,
+            runtimeSelection: runtimeSelection,
+            saveSnapshot: saveSnapshot,
+            saveSources: sources
+        )
+    }
+}
+
 extension LaunchSafetyController {
+    func selectRuntimeAndBeginRecord(
+        bottleID: String,
+        gameID: String,
+        identifier: UUID,
+        at date: Date
+    ) async throws -> RuntimeSelection {
+        let selection = try runtimeResolver.resolve(bottleID: bottleID, gameID: gameID)
+        _ = try await journal.begin(
+            bottleID: bottleID,
+            gameID: gameID,
+            runtimeSlotID: selection.slotID,
+            identifier: identifier,
+            at: date
+        )
+        return selection
+    }
+
     func recordSavePlan(
         _ sources: [SaveSource],
         bottleURL: URL,
@@ -60,6 +91,7 @@ extension LaunchSafetyController {
                 bottleID: preparation.bottleID,
                 gameID: preparation.gameID,
                 sources: preparation.saveSources,
+                createdAt: preparation.saveSnapshot?.manifest.createdAt ?? Date(),
                 identifier: "post-\(preparation.transactionID.uuidString.lowercased())"
             )
         }.value
@@ -69,6 +101,14 @@ extension LaunchSafetyController {
         try await leaseStore.release(
             bottleID: preparation.bottleID,
             transactionID: preparation.transactionID
+        )
+    }
+
+    func recordRuntimeSuccess(_ preparation: LaunchSafetyPreparation) throws {
+        try runtimeResolver.recordSuccess(
+            preparation.runtimeSelection,
+            bottleID: preparation.bottleID,
+            gameID: preparation.gameID
         )
     }
 
@@ -105,11 +145,28 @@ extension LaunchSafetyController {
             bottleID: record.bottleID,
             gameID: record.gameID
         )) ?? []
+        let runtimeSelection: RuntimeSelection = if let slotID = record.runtimeSlotID,
+                                                    let selected = try? runtimeResolver.resolve(slotID: slotID) {
+            selected
+        } else if let selected = try? runtimeResolver.resolve(
+            bottleID: record.bottleID,
+            gameID: record.gameID
+        ) {
+            selected
+        } else {
+            RuntimeSelection(
+                slotID: nil,
+                libraryURL: WhiskyWineInstaller.legacyLibraryFolder,
+                manifest: nil,
+                reason: "recovery fallback"
+            )
+        }
         return LaunchSafetyPreparation(
             transactionID: record.id,
             bottleURL: bottleURL,
             bottleID: record.bottleID,
             gameID: record.gameID,
+            runtimeSelection: runtimeSelection,
             saveSnapshot: nil,
             saveSources: sources
         )

@@ -98,12 +98,19 @@ public class WhiskyWineInstaller {
     /// The folder containing all library files including Wine and DXVK.
     ///
     /// Located at `~/Library/Application Support/{bundle-identifier}/Libraries/`.
-    public static let libraryFolder = applicationFolder.appending(path: "Libraries")
+    public static let legacyLibraryFolder = applicationFolder.appending(path: "Libraries")
+
+    /// The selected immutable slot, falling back to the pre-slot location during migration.
+    public static var libraryFolder: URL {
+        RuntimeSlotManager.live().defaultLibraryURL() ?? legacyLibraryFolder
+    }
 
     /// The URL to the Wine binary directory.
     ///
     /// This folder contains `wine64`, `wineserver`, and other Wine executables.
-    public static let binFolder: URL = libraryFolder.appending(path: "Wine").appending(path: "bin")
+    public static var binFolder: URL {
+        libraryFolder.appending(path: "Wine").appending(path: "bin")
+    }
 
     /// Checks whether WhiskyWine is currently installed and usable.
     ///
@@ -167,7 +174,14 @@ public class WhiskyWineInstaller {
     ///
     /// - Important: Ensure the tarball is from a trusted source.
     public static func install(from: URL) throws {
-        try install(tarball: from, into: applicationFolder)
+        guard FileManager.default.fileExists(atPath: from.path(percentEncoded: false)) else {
+            throw WhiskyWineInstallError.tarballNotFound
+        }
+        _ = try RuntimeSlotManager.live().install(
+            tarball: from,
+            channel: .stable,
+            sourceURL: URL(string: DistributionConfig.runtimeReleasesBaseURL)
+        )
     }
 
     /// Extracts a WhiskyWine tarball into `destination`, replacing any existing
@@ -285,7 +299,10 @@ public class WhiskyWineInstaller {
     /// to run programs until WhiskyWine is reinstalled.
     public static func uninstall() {
         do {
-            try FileManager.default.removeItem(at: libraryFolder)
+            try RuntimeSlotManager.live().removeAllSlots()
+            if FileManager.default.fileExists(atPath: legacyLibraryFolder.path(percentEncoded: false)) {
+                try FileManager.default.removeItem(at: legacyLibraryFolder)
+            }
         } catch {
             logger.error("Failed to uninstall WhiskyWine: \(error.localizedDescription)")
         }

@@ -20,6 +20,50 @@ import Foundation
 
 @MainActor
 extension SteamClientOrchestrator {
+    /// Whether Play should persist Steam's launcher fixes before a cold start.
+    public static func shouldApplyLauncherFixes(settings: BottleSettings) -> Bool {
+        guard settings.launcherMode == .auto else { return false }
+        return !(settings.launcherCompatibilityMode && settings.detectedLauncher == .steam)
+    }
+
+    func passesPreflight(
+        _ game: SteamGame,
+        preparation: SteamLaunchPreparation
+    ) async -> Bool {
+        guard let launchSafety else { return true }
+        let report = await launchSafety.preflight(
+            game: game,
+            bottle: bottle,
+            preparation: preparation
+        )
+        guard !report.canLaunch else { return true }
+        _ = try? await launchSafety.fail(preparation, code: "preflight-blocked")
+        launchError = LaunchPreflightError.blocked(report).localizedDescription
+        return false
+    }
+
+    /// Waits until launch preparation and every owned exit cleanup task finish.
+    public func waitUntilFinished(
+        _ game: SteamGame,
+        pollInterval: Duration = .milliseconds(200)
+    ) async {
+        while phases[game.appId] != nil || !exitMonitorTasks.isEmpty {
+            try? await Task.sleep(for: pollInterval)
+        }
+    }
+
+    func resolvedOfflinePolicy(for game: SteamGame) async -> Bool? {
+        do {
+            return try await launchSafety?.savePolicy(
+                for: game,
+                bottleURL: bottle.url
+            ) == .localOnly
+        } catch {
+            launchError = error.localizedDescription
+            return nil
+        }
+    }
+
     /// Reattaches durable records to running games and closes records whose game exited.
     public func recoverUnfinishedLaunches(games: [SteamGame]) async throws {
         guard let launchSafety else { return }
@@ -87,8 +131,11 @@ extension SteamClientOrchestrator {
     ) {
         let identifier = preparation.transactionID
         exitMonitorTasks[identifier]?.cancel()
+        let runtimeURL = preparation.runtimeSelection.libraryURL
         exitMonitorTasks[identifier] = Task { [weak self] in
-            await self?.monitorGameExit(game, preparation: preparation)
+            await RuntimeContext.withLibrary(runtimeURL) {
+                await self?.monitorGameExit(game, preparation: preparation)
+            }
         }
     }
 

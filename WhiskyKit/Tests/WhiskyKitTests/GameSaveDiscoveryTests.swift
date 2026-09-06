@@ -51,7 +51,10 @@ final class GameSaveDiscoveryTests: XCTestCase {
             wineUserName: "test"
         )
 
-        XCTAssertEqual(sources.map(\.url), [matching])
+        XCTAssertEqual(
+            sources.map { $0.url.resolvingSymlinksInPath() },
+            [matching.resolvingSymlinksInPath()]
+        )
         XCTAssertTrue(sources.allSatisfy { $0.id.hasPrefix("discovered-") })
         XCTAssertFalse(sources[0].id.lowercased().contains("example"))
     }

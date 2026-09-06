@@ -1,4 +1,3 @@
-// swiftlint:disable file_length
 //
 //  GameMatcher.swift
 //  WhiskyKit
@@ -108,12 +107,17 @@ public enum GameMatcher {
     /// - Returns: Sorted array of match results above the minimum confidence threshold.
     public static func match(
         metadata: ProgramMetadata,
-        against entries: [GameDBEntry]
+        against entries: [GameDBEntry],
+        hardwareProfile: HardwareProfile = .current()
     ) -> [MatchResult] {
         var results: [MatchResult] = []
 
         for entry in entries {
-            if let result = scoreEntry(metadata: metadata, entry: entry) {
+            if let result = scoreEntry(
+                metadata: metadata,
+                entry: entry,
+                hardwareProfile: hardwareProfile
+            ) {
                 results.append(result)
             }
         }
@@ -134,9 +138,14 @@ public enum GameMatcher {
     /// - Returns: The single best match, or `nil` if ambiguous or below threshold.
     public static func bestMatch(
         metadata: ProgramMetadata,
-        against entries: [GameDBEntry]
+        against entries: [GameDBEntry],
+        hardwareProfile: HardwareProfile = .current()
     ) -> MatchResult? {
-        let results = match(metadata: metadata, against: entries)
+        let results = match(
+            metadata: metadata,
+            against: entries,
+            hardwareProfile: hardwareProfile
+        )
         guard let top = results.first, top.confidence >= bestMatchMinimum else {
             return nil
         }
@@ -193,11 +202,12 @@ public enum GameMatcher {
     /// Scores a single entry against the metadata, returning the best tier match.
     private static func scoreEntry(
         metadata: ProgramMetadata,
-        entry: GameDBEntry
+        entry: GameDBEntry,
+        hardwareProfile: HardwareProfile
     ) -> MatchResult? {
         // Try tiers in order of confidence: hard > strong > fuzzy
         if let (score, explanation) = scoreHardIdentifiers(metadata: metadata, entry: entry) {
-            let variant = selectVariant(from: entry)
+            let variant = selectVariant(from: entry, hardwareProfile: hardwareProfile)
             return MatchResult(
                 entry: entry,
                 confidence: score,
@@ -209,7 +219,7 @@ public enum GameMatcher {
 
         if let (score, explanation) = scoreStrongHeuristics(metadata: metadata, entry: entry) {
             guard score >= minimumThreshold else { return nil }
-            let variant = selectVariant(from: entry)
+            let variant = selectVariant(from: entry, hardwareProfile: hardwareProfile)
             return MatchResult(
                 entry: entry,
                 confidence: score,
@@ -221,7 +231,7 @@ public enum GameMatcher {
 
         if let (score, explanation) = scoreFuzzy(metadata: metadata, entry: entry) {
             guard score >= minimumThreshold else { return nil }
-            let variant = selectVariant(from: entry)
+            let variant = selectVariant(from: entry, hardwareProfile: hardwareProfile)
             return MatchResult(
                 entry: entry,
                 confidence: score,
@@ -353,34 +363,6 @@ public enum GameMatcher {
         return (score, explanation)
     }
 
-    // MARK: - Variant Selection
-
-    /// Selects the recommended variant for the current machine.
-    private static func selectVariant(from entry: GameDBEntry) -> GameConfigVariant? {
-        guard !entry.variants.isEmpty else { return nil }
-
-        let currentArch = machineArchitecture()
-        let currentOS = operatingSystemVersion()
-
-        // Filter variants whose constraints match current machine
-        // Sort variants: prefer those tested on current architecture
-        let matching = entry.variants.sorted { lhs, rhs in
-            let lhsMatchesArch = lhs.testedWith?.cpuArchitecture == currentArch
-            let rhsMatchesArch = rhs.testedWith?.cpuArchitecture == currentArch
-            if lhsMatchesArch != rhsMatchesArch {
-                return lhsMatchesArch
-            }
-            return false
-        }
-
-        // Prefer isDefault variant
-        if let defaultVariant = matching.first(where: { $0.isDefault == true }) {
-            return defaultVariant
-        }
-
-        return matching.first ?? entry.variants.first
-    }
-
     // MARK: - Tokenization
 
     /// Tokenizes a string by splitting on whitespace and common separators.
@@ -403,25 +385,4 @@ public enum GameMatcher {
             .components(separatedBy: separators)
             .filter { !$0.isEmpty }
     }
-
-    // MARK: - System Info
-
-    /// Returns the current machine's CPU architecture string.
-    private static func machineArchitecture() -> String {
-        var sysinfo = utsname()
-        uname(&sysinfo)
-        return withUnsafePointer(to: &sysinfo.machine) {
-            $0.withMemoryRebound(to: CChar.self, capacity: 1) {
-                String(cString: $0)
-            }
-        }
-    }
-
-    /// Returns the current macOS version string (e.g., "15.3.0").
-    private static func operatingSystemVersion() -> String {
-        let version = ProcessInfo.processInfo.operatingSystemVersion
-        return "\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
-    }
 }
-
-// swiftlint:enable file_length

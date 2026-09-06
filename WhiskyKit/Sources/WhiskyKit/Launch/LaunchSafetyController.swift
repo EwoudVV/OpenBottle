@@ -24,6 +24,7 @@ public struct LaunchSafetyPreparation: Equatable, Sendable {
     public let bottleURL: URL
     public let bottleID: String
     public let gameID: String
+    public let runtimeSelection: RuntimeSelection
     public let saveSnapshot: SaveSnapshot?
     public let saveSources: [SaveSource]
 
@@ -32,6 +33,7 @@ public struct LaunchSafetyPreparation: Equatable, Sendable {
         bottleURL: URL,
         bottleID: String,
         gameID: String,
+        runtimeSelection: RuntimeSelection,
         saveSnapshot: SaveSnapshot?,
         saveSources: [SaveSource]
     ) {
@@ -39,29 +41,20 @@ public struct LaunchSafetyPreparation: Equatable, Sendable {
         self.bottleURL = bottleURL
         self.bottleID = bottleID
         self.gameID = gameID
+        self.runtimeSelection = runtimeSelection
         self.saveSnapshot = saveSnapshot
         self.saveSources = saveSources
-    }
-
-    public func withSaveSources(_ sources: [SaveSource]) -> LaunchSafetyPreparation {
-        LaunchSafetyPreparation(
-            transactionID: transactionID,
-            bottleURL: bottleURL,
-            bottleID: bottleID,
-            gameID: gameID,
-            saveSnapshot: saveSnapshot,
-            saveSources: sources
-        )
     }
 }
 
 /// One launch transaction used by stores, programs, shortcuts, URLs, and the CLI.
 public struct LaunchSafetyController: Sendable {
     let saveVault: SaveVault
-    private let journal: LaunchTransactionJournal
+    let journal: LaunchTransactionJournal
     let configurationStore: LaunchConfigurationStore
     let leaseStore: LaunchLeaseStore
     let saveSourcePlanStore: SaveSourcePlanStore
+    let runtimeResolver: RuntimeResolver
     let maximumSaveSnapshots: Int
     let maximumConfigurationSnapshots: Int
 
@@ -72,6 +65,7 @@ public struct LaunchSafetyController: Sendable {
         configurationRestoreJournal: SaveRestoreJournal? = nil,
         leaseStore: LaunchLeaseStore? = nil,
         saveSourcePlanStore: SaveSourcePlanStore? = nil,
+        runtimeResolver: RuntimeResolver? = nil,
         maximumSaveSnapshots: Int = SaveVault.defaultMaximumSnapshots,
         maximumConfigurationSnapshots: Int = LaunchConfigurationStore.defaultMaximumSnapshots
     ) {
@@ -94,6 +88,7 @@ public struct LaunchSafetyController: Sendable {
         self.saveSourcePlanStore = saveSourcePlanStore ?? SaveSourcePlanStore(
             rootURL: safetyRoot.appending(path: "Save Plans")
         )
+        self.runtimeResolver = runtimeResolver ?? .live()
         self.maximumSaveSnapshots = max(1, maximumSaveSnapshots)
         self.maximumConfigurationSnapshots = max(1, maximumConfigurationSnapshots)
     }
@@ -125,7 +120,7 @@ public struct LaunchSafetyController: Sendable {
         at date: Date = Date()
     ) async throws -> LaunchSafetyPreparation {
         let bottleID = BottleLaunchIdentity.id(for: bottleURL)
-        _ = try await journal.begin(
+        let runtimeSelection = try await selectRuntimeAndBeginRecord(
             bottleID: bottleID,
             gameID: gameID,
             identifier: identifier,
@@ -162,6 +157,7 @@ public struct LaunchSafetyController: Sendable {
                 bottleURL: bottleURL,
                 bottleID: bottleID,
                 gameID: gameID,
+                runtimeSelection: runtimeSelection,
                 saveSnapshot: snapshot,
                 saveSources: saveSources
             )
@@ -278,6 +274,9 @@ public struct LaunchSafetyController: Sendable {
             )
         case .cleaningUp:
             try await restoreConfiguration(preparation)
+            if record.failureCode == nil {
+                try? recordRuntimeSuccess(preparation)
+            }
             try await releaseLease(preparation)
             let terminal: LaunchTransactionStage = record.failureCode == nil ? .completed : .failed
             return try await journal.advance(record.id, to: terminal)
@@ -322,6 +321,9 @@ private extension LaunchSafetyController {
             )
         case .cleaningUp:
             try await restoreConfiguration(preparation)
+            if record.failureCode == nil {
+                try? recordRuntimeSuccess(preparation)
+            }
             try await releaseLease(preparation)
             let terminal: LaunchTransactionStage = record.failureCode == nil ? .completed : .failed
             return try await journal.advance(record.id, to: terminal)
@@ -351,6 +353,7 @@ private extension LaunchSafetyController {
         )
         do {
             try await restoreConfiguration(preparation)
+            try? recordRuntimeSuccess(preparation)
             try await releaseLease(preparation)
             let completed = try await journal.advance(record.id, to: .completed)
             try? enforceRetention(completed, preparation: preparation)

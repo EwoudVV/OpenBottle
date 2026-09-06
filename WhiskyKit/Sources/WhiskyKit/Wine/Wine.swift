@@ -81,17 +81,28 @@ private let logger = Logger(subsystem: Bundle.whiskyBundleIdentifier, category: 
 /// - ``generateTerminalEnvironmentCommand(bottle:)``
 public class Wine {
     /// URL to the installed DXVK folder containing Direct3D-to-Vulkan translation libraries.
-    private static let dxvkFolder: URL = WhiskyWineInstaller.libraryFolder.appending(path: "DXVK")
+    private static var dxvkFolder: URL {
+        RuntimeContext.resolvedLibraryURL.appending(path: "DXVK")
+    }
+
     /// URL to the installed DXMT payload containing Direct3D-11-to-Metal translation libraries.
     /// Absent on runtimes older than Wine Libraries 3.1.0.
-    private static let dxmtFolder: URL = WhiskyWineInstaller.libraryFolder.appending(path: "DXMT")
+    private static var dxmtFolder: URL {
+        RuntimeContext.resolvedLibraryURL.appending(path: "DXMT")
+    }
+
     /// The URL to the `wine64` binary executable.
     ///
     /// This is the main Wine binary used to execute Windows applications.
     /// The binary is located within the WhiskyWine installation directory.
-    public static let wineBinary: URL = WhiskyWineInstaller.binFolder.appending(path: "wine64")
+    public static var wineBinary: URL {
+        RuntimeContext.binURL.appending(path: "wine64")
+    }
+
     /// URL to the `wineserver` binary for Wine server management.
-    private static let wineserverBinary: URL = WhiskyWineInstaller.binFolder.appending(path: "wineserver")
+    private static var wineserverBinary: URL {
+        RuntimeContext.binURL.appending(path: "wineserver")
+    }
 
     /// Run a process on a executable file given by the `executableURL`
     private static func runProcess(
@@ -459,7 +470,7 @@ public class Wine {
     @MainActor
     public static func generateTerminalEnvironmentCommand(bottle: Bottle) -> String {
         var cmd = """
-        export PATH=\"\(WhiskyWineInstaller.binFolder.path.esc):$PATH\"
+        export PATH=\"\(RuntimeContext.binURL.path.esc):$PATH\"
         export WINE=\"wine64\"
         alias wine=\"wine64\"
         alias winecfg=\"wine64 winecfg\"
@@ -848,7 +859,7 @@ public class Wine {
     public static func applyMetalFX(
         bottle: Bottle,
         backend: GraphicsBackend,
-        libraryFolder: URL = WhiskyWineInstaller.libraryFolder
+        libraryFolder: URL = RuntimeContext.resolvedLibraryURL
     ) {
         if backend == .d3dMetal, bottle.settings.metalFX {
             GPTKImporter.seedMetalFXBridgePlaceholder(inBottle: bottle.url, fromLibraryFolder: libraryFolder)

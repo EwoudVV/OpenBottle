@@ -81,30 +81,9 @@ struct FileOpenView: View {
 
     func run() {
         if let bottle = bottles.first(where: { $0.url == selection }) {
-            Task.detached(priority: .userInitiated) {
+            Task(priority: .userInitiated) {
                 do {
-                    // Auto-detect launcher and apply fixes if compatibility mode enabled
-                    // This completes synchronously on MainActor, ensuring settings are
-                    // persisted before Wine.runProgram() reads them
-                    await MainActor.run {
-                        LauncherFixes.detectAndApply(from: fileURL, for: bottle)
-                        Telemetry.capture(.firstProgramLaunchAttempted)
-                    }
-
-                    if fileURL.pathExtension == "bat" {
-                        try await SafeProgramLauncher.runBatchFile(
-                            at: fileURL,
-                            bottle: bottle
-                        )
-                    } else {
-                        let session = try await SafeProgramLauncher.launch(
-                            at: fileURL,
-                            bottle: bottle
-                        )
-                        Task {
-                            _ = try? await session.waitForExit()
-                        }
-                    }
+                    try await execute(in: bottle)
                 } catch {
                     // Surface the failure on the presenting view's toast (the sheet
                     // dismisses immediately, so a local toast wouldn't be seen) —
@@ -132,5 +111,82 @@ struct FileOpenView: View {
             logger.error("Run requested but no bottle matched the selection")
             dismiss()
         }
+    }
+
+    private func execute(in bottle: Bottle) async throws {
+        let installer = Self.isInstaller(fileURL)
+        let before = installer ? await Self.installedExecutables(in: bottle) : []
+        LauncherFixes.detectAndApply(from: fileURL, for: bottle)
+        Telemetry.capture(.firstProgramLaunchAttempted)
+
+        if fileURL.pathExtension == "bat" {
+            try await SafeProgramLauncher.runBatchFile(at: fileURL, bottle: bottle)
+            if installer {
+                await publishInstallerResult(before: before, bottle: bottle)
+            }
+            return
+        }
+
+        let session = try await SafeProgramLauncher.launch(at: fileURL, bottle: bottle)
+        if installer {
+            _ = try await session.waitForExit()
+            await publishInstallerResult(before: before, bottle: bottle)
+        } else {
+            Task {
+                _ = try? await session.waitForExit()
+            }
+        }
+    }
+
+    private static func isInstaller(_ url: URL) -> Bool {
+        if ["msi", "msix", "appx"].contains(url.pathExtension.lowercased()) {
+            return true
+        }
+        let name = url.deletingPathExtension().lastPathComponent.lowercased()
+        return name.contains("setup") || name.contains("install")
+    }
+
+    private static func installedExecutables(in bottle: Bottle) async -> Set<URL> {
+        let driveC = bottle.url.appending(path: "drive_c")
+        let blocklist = await MainActor.run { Set(bottle.settings.blocklist) }
+        return Set(Bottle.discoverInstalledExecutables(driveC: driveC, blocklist: blocklist))
+    }
+
+    @MainActor
+    private func publishInstallerResult(before: Set<URL>, bottle: Bottle) async {
+        let after = await Self.installedExecutables(in: bottle)
+        let added = after.subtracting(before).filter(Self.isLikelyInstalledProgram)
+        let candidate = added.max { Self.fileSize($0) < Self.fileSize($1) }
+        if let candidate,
+           !bottle.settings.pins.contains(where: { $0.url == candidate }) {
+            let name = candidate.deletingPathExtension().lastPathComponent
+            bottle.settings.pins.append(PinnedProgram(name: name, url: candidate))
+            if !bottle.programs.contains(where: { $0.url == candidate }) {
+                bottle.programs.append(Program(url: candidate, bottle: bottle))
+            }
+            toast = ToastData(
+                message: String(
+                    format: String(localized: "library.install.added %@"),
+                    name
+                ),
+                style: .success
+            )
+        } else {
+            toast = ToastData(
+                message: String(localized: "library.install.finished"),
+                style: .success
+            )
+        }
+    }
+
+    private static func isLikelyInstalledProgram(_ url: URL) -> Bool {
+        let name = url.lastPathComponent.lowercased()
+        return !["unins", "uninstall", "setup", "update", "redist", "crash"]
+            .contains { name.contains($0) }
+    }
+
+    private static func fileSize(_ url: URL) -> Int64 {
+        let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
+        return (attributes?[.size] as? NSNumber)?.int64Value ?? 0
     }
 }

@@ -59909,6 +59909,38 @@
         }
       }
     },
+    "library.empty.advanced" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open advanced bottle view"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open advanced bottle view"
+          }
+        }
+      }
+    },
+    "library.empty.install" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Install a Windows game…"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Install a Windows game…"
+          }
+        }
+      }
+    },
     "library.empty.noBottle" : {
       "localizations" : {
         "en" : {
@@ -59969,6 +60001,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nothing installed yet"
+          }
+        }
+      }
+    },
+    "library.install.added %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installed and added %@ to the library."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installed and added %@ to the library."
+          }
+        }
+      }
+    },
+    "library.install.finished" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installer finished. Open Programs if you want to add one of its apps to the library."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installer finished. Open Programs if you want to add one of its apps to the library."
           }
         }
       }
@@ -72059,6 +72123,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "執行「%@」"
+          }
+        }
+      }
+    },
+    "runtime.slots.current %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runtime %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runtime %@"
+          }
+        }
+      }
+    },
+    "runtime.slots.help" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the Stable runtime. Games keep their last successful runtime pin."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the Stable runtime. Games keep their last successful runtime pin."
+          }
+        }
+      }
+    },
+    "runtime.slots.legacy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legacy runtime"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legacy runtime"
+          }
+        }
+      }
+    },
+    "runtime.slots.none" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runtime needed"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runtime needed"
           }
         }
       }
