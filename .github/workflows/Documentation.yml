@@ -75,6 +75,9 @@ jobs:
 
   deploy:
     name: Deploy to GitHub Pages
+    # Keep the upstream deployment working. Forks opt in after their own Pages
+    # environment is ready by setting PUBLISH_DOCUMENTATION to true.
+    if: github.repository == 'frankea/Whisky' || vars.PUBLISH_DOCUMENTATION == 'true'
     needs: build-docs
     runs-on: ubuntu-latest
     environment:
