@@ -25,19 +25,24 @@ public struct SteamSaveSafetyController: Sendable {
     private let entries: [GameDBEntry]
     private let wineUserName: String?
     private let maximumSnapshots: Int
+    private let saveSourcePlanStore: SaveSourcePlanStore
 
     public init(
         vault: SaveVault,
         restoreJournal: SaveRestoreJournal,
         entries: [GameDBEntry] = GameDBLoader.loadDefaults(),
         wineUserName: String? = nil,
-        maximumSnapshots: Int = SaveVault.defaultMaximumSnapshots
+        maximumSnapshots: Int = SaveVault.defaultMaximumSnapshots,
+        saveSourcePlanStore: SaveSourcePlanStore? = nil
     ) {
         self.vault = vault
         self.engine = SaveRestoreEngine(vault: vault, journal: restoreJournal)
         self.entries = entries
         self.wineUserName = wineUserName
         self.maximumSnapshots = max(1, maximumSnapshots)
+        self.saveSourcePlanStore = saveSourcePlanStore ?? SaveSourcePlanStore(
+            rootURL: restoreJournal.rootURL.deletingLastPathComponent().appending(path: "Save Plans")
+        )
     }
 
     public func hasSavePlan(for game: SteamGame) -> Bool {
@@ -53,9 +58,19 @@ public struct SteamSaveSafetyController: Sendable {
         bottleURL: URL
     ) async throws -> SaveSnapshotInventory {
         let plan = try plan(for: game, bottleURL: bottleURL)
-        return try vault.inventory(
+        return try inventory(
+            gameID: plan.gameID,
+            bottleURL: bottleURL
+        )
+    }
+
+    public func inventory(
+        gameID: String,
+        bottleURL: URL
+    ) throws -> SaveSnapshotInventory {
+        try vault.inventory(
             bottleID: BottleLaunchIdentity.id(for: bottleURL),
-            gameID: plan.gameID
+            gameID: gameID
         )
     }
 
@@ -65,20 +80,41 @@ public struct SteamSaveSafetyController: Sendable {
         bottleURL: URL
     ) async throws -> SaveRestoreResult {
         let plan = try plan(for: game, bottleURL: bottleURL)
+        return try await restore(
+            snapshot: snapshot,
+            gameID: plan.gameID,
+            sources: plan.sources,
+            bottleURL: bottleURL
+        )
+    }
+
+    public func restore(
+        snapshot: SaveSnapshot,
+        gameID: String,
+        sources: [SaveSource],
+        bottleURL: URL
+    ) async throws -> SaveRestoreResult {
         let bottleID = BottleLaunchIdentity.id(for: bottleURL)
         guard snapshot.manifest.bottleID == bottleID,
-              snapshot.manifest.gameID == plan.gameID
+              snapshot.manifest.gameID == gameID
         else {
             throw SaveRestoreError.snapshotScopeMismatch
         }
+        let restoreSources = try restorationSources(
+            for: snapshot,
+            suppliedSources: sources,
+            bottleURL: bottleURL,
+            bottleID: bottleID,
+            gameID: gameID
+        )
         let result = try await engine.restore(
             snapshotAt: snapshot.url,
-            sources: plan.sources
+            sources: restoreSources
         )
         _ = try? await Task.detached(priority: .utility) {
             try vault.enforceRetention(
                 bottleID: bottleID,
-                gameID: plan.gameID,
+                gameID: gameID,
                 maximumSnapshots: maximumSnapshots,
                 protectedSnapshotIDs: [
                     result.restoredSnapshot.manifest.id,
@@ -120,5 +156,29 @@ public struct SteamSaveSafetyController: Sendable {
             entries: entries,
             wineUserName: wineUserName
         )
+    }
+
+    private func restorationSources(
+        for snapshot: SaveSnapshot,
+        suppliedSources: [SaveSource],
+        bottleURL: URL,
+        bottleID: String,
+        gameID: String
+    ) throws -> [SaveSource] {
+        let persisted = try saveSourcePlanStore.load(
+            bottleURL: bottleURL,
+            bottleID: bottleID,
+            gameID: gameID
+        )
+        var byID = Dictionary(uniqueKeysWithValues: persisted.map { ($0.id, $0) })
+        for source in suppliedSources {
+            byID[source.id] = source
+        }
+        return try snapshot.manifest.sources.map { record in
+            guard let source = byID[record.id] else {
+                throw SaveRestoreError.sourcePlanMismatch(record.id)
+            }
+            return source
+        }
     }
 }

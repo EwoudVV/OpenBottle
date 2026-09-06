@@ -32,8 +32,9 @@ final class LaunchSafetyControllerTests: XCTestCase {
         let fixture = try makeFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
         let launchJournal = LaunchTransactionJournal(rootURL: fixture.root.appending(path: "transactions"))
+        let saveVault = SaveVault(rootURL: fixture.root.appending(path: "save-vault"))
         let controller = LaunchSafetyController(
-            saveVault: SaveVault(rootURL: fixture.root.appending(path: "save-vault")),
+            saveVault: saveVault,
             journal: launchJournal,
             configurationVault: SaveVault(rootURL: fixture.root.appending(path: "config-vault")),
             configurationRestoreJournal: SaveRestoreJournal(
@@ -42,10 +43,14 @@ final class LaunchSafetyControllerTests: XCTestCase {
         )
         let identifier = UUID()
 
+        let futureSave = fixture.bottle.appending(path: "future-save")
         let preparation = try await controller.begin(
             bottleURL: fixture.bottle,
             gameID: "standalone-game",
-            saveSources: [SaveSource(id: "progress", url: fixture.save, kind: .file)],
+            saveSources: [
+                SaveSource(id: "progress", url: fixture.save, kind: .file),
+                SaveSource(id: "future", url: futureSave, kind: .directory)
+            ],
             identifier: identifier
         )
         XCTAssertTrue(preparation.saveSnapshot != nil)
@@ -53,11 +58,24 @@ final class LaunchSafetyControllerTests: XCTestCase {
 
         try Data("temporary-renderer".utf8).write(to: fixture.renderer)
         try Data("new-progress".utf8).write(to: fixture.save)
+        try FileManager.default.createDirectory(at: futureSave, withIntermediateDirectories: true)
+        try Data("first-run-save".utf8).write(to: futureSave.appending(path: "slot.dat"))
         _ = try await controller.markLaunchRequested(preparation)
         _ = try await controller.markMonitoring(preparation)
         let completed = try await controller.finish(preparation)
 
         XCTAssertEqual(completed.stage, .completed)
+        let postLaunchID = try XCTUnwrap(completed.postLaunchSaveSnapshotID)
+        let postLaunchURL = try saveVault.snapshotURL(
+            bottleID: preparation.bottleID,
+            gameID: preparation.gameID,
+            snapshotID: postLaunchID
+        )
+        let postLaunch = try saveVault.verify(snapshotAt: postLaunchURL)
+        XCTAssertEqual(
+            postLaunch.manifest.sources.first { $0.id == "future" }?.wasPresent,
+            true
+        )
         XCTAssertEqual(try Data(contentsOf: fixture.renderer), Data("original-renderer".utf8))
         XCTAssertEqual(try Data(contentsOf: fixture.save), Data("new-progress".utf8))
         let unfinished = try await launchJournal.unfinished()

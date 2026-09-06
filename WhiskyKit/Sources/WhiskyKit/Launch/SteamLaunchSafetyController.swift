@@ -168,8 +168,18 @@ public struct SteamLaunchSafetyController: Sendable {
 
     @discardableResult
     func finishAfterExit(
-        _ preparation: SteamLaunchPreparation
+        _ preparation: SteamLaunchPreparation,
+        game: SteamGame,
+        bottleURL: URL
     ) async throws -> LaunchTransactionRecord {
-        try await controller.finish(preparation)
+        let plan = try SteamGameSavePlanner.resolve(
+            game: game,
+            bottleURL: bottleURL,
+            entries: entries,
+            wineUserName: wineUserName
+        )
+        return try await controller.finish(
+            preparation.withSaveSources(plan.sources)
+        )
     }
 }

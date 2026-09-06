@@ -78,6 +78,7 @@ public struct LaunchTransactionRecord: Codable, Equatable, Identifiable, Sendabl
     public let createdAt: Date
     public private(set) var updatedAt: Date
     public private(set) var saveSnapshotID: String?
+    public private(set) var postLaunchSaveSnapshotID: String?
     public private(set) var failureCode: String?
 
     public init(
@@ -89,6 +90,7 @@ public struct LaunchTransactionRecord: Codable, Equatable, Identifiable, Sendabl
         createdAt: Date,
         updatedAt: Date,
         saveSnapshotID: String? = nil,
+        postLaunchSaveSnapshotID: String? = nil,
         failureCode: String? = nil
     ) {
         self.schemaVersion = schemaVersion
@@ -99,6 +101,7 @@ public struct LaunchTransactionRecord: Codable, Equatable, Identifiable, Sendabl
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.saveSnapshotID = saveSnapshotID
+        self.postLaunchSaveSnapshotID = postLaunchSaveSnapshotID
         if let failureCode {
             self.failureCode = failureCode
         }
@@ -107,6 +110,7 @@ public struct LaunchTransactionRecord: Codable, Equatable, Identifiable, Sendabl
     fileprivate mutating func advance(
         to next: LaunchTransactionStage,
         saveSnapshotID: String?,
+        postLaunchSaveSnapshotID: String?,
         failureCode: String?,
         at date: Date
     ) {
@@ -114,6 +118,9 @@ public struct LaunchTransactionRecord: Codable, Equatable, Identifiable, Sendabl
         updatedAt = date
         if let saveSnapshotID {
             self.saveSnapshotID = saveSnapshotID
+        }
+        if let postLaunchSaveSnapshotID {
+            self.postLaunchSaveSnapshotID = postLaunchSaveSnapshotID
         }
         if let failureCode {
             self.failureCode = failureCode
@@ -195,6 +202,7 @@ public actor LaunchTransactionJournal {
         _ identifier: UUID,
         to next: LaunchTransactionStage,
         saveSnapshotID: String? = nil,
+        postLaunchSaveSnapshotID: String? = nil,
         at date: Date = Date()
     ) throws -> LaunchTransactionRecord {
         var record = try load(identifier)
@@ -207,10 +215,14 @@ public actor LaunchTransactionJournal {
         if let saveSnapshotID {
             try Self.validateIdentifier(saveSnapshotID)
         }
+        if let postLaunchSaveSnapshotID {
+            try Self.validateIdentifier(postLaunchSaveSnapshotID)
+        }
 
         record.advance(
             to: next,
             saveSnapshotID: saveSnapshotID,
+            postLaunchSaveSnapshotID: postLaunchSaveSnapshotID,
             failureCode: nil,
             at: date
         )
@@ -243,7 +255,13 @@ public actor LaunchTransactionJournal {
         case .completed, .failed:
             throw LaunchTransactionError.invalidTransition(from: record.stage, nextStage: .failed)
         }
-        record.advance(to: next, saveSnapshotID: nil, failureCode: code, at: date)
+        record.advance(
+            to: next,
+            saveSnapshotID: nil,
+            postLaunchSaveSnapshotID: nil,
+            failureCode: code,
+            at: date
+        )
         try write(record)
         return record
     }
@@ -310,6 +328,9 @@ public actor LaunchTransactionJournal {
         try Self.validateIdentifier(record.gameID)
         if let saveSnapshotID = record.saveSnapshotID {
             try Self.validateIdentifier(saveSnapshotID)
+        }
+        if let postLaunchSaveSnapshotID = record.postLaunchSaveSnapshotID {
+            try Self.validateIdentifier(postLaunchSaveSnapshotID)
         }
         if let failureCode = record.failureCode {
             try Self.validateIdentifier(failureCode)

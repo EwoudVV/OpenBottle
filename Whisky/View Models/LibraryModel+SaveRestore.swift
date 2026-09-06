@@ -20,8 +20,13 @@ import Foundation
 import WhiskyKit
 
 struct LibraryRestoreSheet: Identifiable {
+    enum Target {
+        case steam(SteamGame)
+        case program(gameID: String, sources: [SaveSource])
+    }
+
     let row: LibraryRow
-    let game: SteamGame
+    let target: Target
     let inventory: SaveSnapshotInventory
 
     var id: String { row.id }
@@ -43,22 +48,41 @@ enum LibrarySaveError: LocalizedError {
 
 extension LibraryModel {
     func canManageSaves(for row: LibraryRow) -> Bool {
-        guard case let .steam(appID) = row.item.launch else { return false }
-        return saveSafety.hasSavePlan(steamAppID: appID)
+        !row.item.isLauncher
     }
 
     func showRestorePoints(for row: LibraryRow, bottles: [Bottle]) async {
         do {
-            let target = try steamTarget(for: row, bottles: bottles)
-            let inventory = try await saveSafety.inventory(
-                game: target.game,
-                bottleURL: target.bottle.url
-            )
-            restoreSheet = LibraryRestoreSheet(
-                row: row,
-                game: target.game,
-                inventory: inventory
-            )
+            guard let bottle = bottles.first(where: { $0.url == row.item.bottleURL }) else {
+                throw LibrarySaveError.gameUnavailable
+            }
+            switch row.item.launch {
+            case .steam:
+                let target = try steamTarget(for: row, bottles: bottles)
+                let inventory = try await saveSafety.inventory(
+                    game: target.game,
+                    bottleURL: target.bottle.url
+                )
+                restoreSheet = LibraryRestoreSheet(
+                    row: row,
+                    target: .steam(target.game),
+                    inventory: inventory
+                )
+            case let .program(url):
+                let plan = try ProgramLaunchPlanner.resolve(
+                    programURL: url,
+                    bottleURL: bottle.url
+                )
+                let inventory = try saveSafety.inventory(
+                    gameID: plan.gameID,
+                    bottleURL: bottle.url
+                )
+                restoreSheet = LibraryRestoreSheet(
+                    row: row,
+                    target: .program(gameID: plan.gameID, sources: plan.saveSources),
+                    inventory: inventory
+                )
+            }
         } catch {
             saveError = error.localizedDescription
         }
@@ -75,16 +99,31 @@ extension LibraryModel {
         defer { restoringEntryIDs.remove(entryID) }
 
         do {
-            let target = try steamTarget(for: sheet.row, bottles: bottles)
-            let running = await orchestrator(for: target.bottle).runningAppIDs(in: [target.game])
-            guard !running.contains(target.game.appId) else {
-                throw LibrarySaveError.gameRunning
+            guard let bottle = bottles.first(where: { $0.url == sheet.row.item.bottleURL }) else {
+                throw LibrarySaveError.gameUnavailable
             }
-            _ = try await saveSafety.restore(
-                snapshot: snapshot,
-                game: target.game,
-                bottleURL: target.bottle.url
-            )
+            switch sheet.target {
+            case let .steam(game):
+                let running = await orchestrator(for: bottle).runningAppIDs(in: [game])
+                guard !running.contains(game.appId) else {
+                    throw LibrarySaveError.gameRunning
+                }
+                _ = try await saveSafety.restore(
+                    snapshot: snapshot,
+                    game: game,
+                    bottleURL: bottle.url
+                )
+            case let .program(gameID, sources):
+                guard await !Wine.isWineserverRunning(for: bottle) else {
+                    throw LibrarySaveError.gameRunning
+                }
+                _ = try await saveSafety.restore(
+                    snapshot: snapshot,
+                    gameID: gameID,
+                    sources: sources,
+                    bottleURL: bottle.url
+                )
+            }
             restoreSheet = nil
             toast = ToastData(
                 message: String(localized: "library.saves.restored"),

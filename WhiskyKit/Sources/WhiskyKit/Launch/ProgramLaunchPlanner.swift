@@ -54,7 +54,7 @@ public enum ProgramLaunchPlanner {
             programURL: programURL,
             bottleURL: bottleURL
         )
-        let saveSources = try GameSaveResolver.resolve(
+        let declared = try GameSaveResolver.resolve(
             match?.entry.saveLocations ?? [],
             context: GameSaveContext(
                 bottleURL: bottleURL,
@@ -62,9 +62,18 @@ public enum ProgramLaunchPlanner {
                 wineUserName: wineUserName
             )
         )
+        let discovered = GameSaveDiscovery.programSources(
+            programURL: programURL,
+            bottleURL: bottleURL,
+            entry: match?.entry,
+            wineUserName: wineUserName
+        )
         return ProgramLaunchPlan(
             gameID: gameID,
-            saveSources: saveSources,
+            saveSources: GameSaveDiscovery.merging(
+                declared: declared,
+                discovered: discovered
+            ),
             launchPlan: LaunchResolver.plan(
                 metadata: metadata,
                 userOverrides: userOverrides,

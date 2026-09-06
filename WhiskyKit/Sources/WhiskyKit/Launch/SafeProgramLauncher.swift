@@ -56,6 +56,20 @@ public enum SafeProgramLauncher {
     }
 
     @MainActor
+    private struct LaunchContext {
+        let url: URL
+        let args: [String]
+        let bottle: Bottle
+        let environment: [String: String]
+        let programSettings: ProgramSettings?
+        let controller: LaunchSafetyController
+        let entries: [GameDBEntry]
+        let timing: Timing
+        let plan: ProgramLaunchPlan
+        let preparation: LaunchSafetyPreparation
+    }
+
+    @MainActor
     public static func launch(
         at url: URL,
         args: [String] = [],
@@ -80,40 +94,47 @@ public enum SafeProgramLauncher {
             saveSources: plan.saveSources
         )
 
+        return try await start(LaunchContext(
+            url: url,
+            args: args,
+            bottle: bottle,
+            environment: environment,
+            programSettings: programSettings,
+            controller: controller,
+            entries: entries,
+            timing: timing,
+            plan: plan,
+            preparation: preparation
+        ))
+    }
+
+    @MainActor
+    private static func start(_ context: LaunchContext) async throws -> SafeProgramSession {
         do {
-            _ = try await controller.prepareConfiguration(preparation)
-            _ = try await controller.markLaunchRequested(preparation)
+            _ = try await context.controller.prepareConfiguration(context.preparation)
+            _ = try await context.controller.markLaunchRequested(context.preparation)
             let result = try await Wine.runProgram(
-                at: url,
-                args: args,
-                bottle: bottle,
-                environment: environment,
-                programOverrides: plan.launchPlan.overrides,
-                programSettings: programSettings,
-                gameProfileEnvironment: plan.launchPlan.gameProfileEnvironment
+                at: context.url,
+                args: context.args,
+                bottle: context.bottle,
+                environment: context.environment,
+                programOverrides: context.plan.launchPlan.overrides,
+                programSettings: context.programSettings,
+                gameProfileEnvironment: context.plan.launchPlan.gameProfileEnvironment
             )
             if result.exitCode != 0 {
                 let record = try await finishFailure(
-                    preparation,
-                    controller: controller,
+                    context.preparation,
+                    controller: context.controller,
                     code: "program-launch-failed"
                 )
                 return SafeProgramSession(result: result, completion: Task { record })
             }
-            return SafeProgramSession(
-                result: result,
-                completion: monitor(
-                    processNames: plan.processNames,
-                    bottle: bottle,
-                    preparation: preparation,
-                    controller: controller,
-                    timing: timing
-                )
-            )
+            return SafeProgramSession(result: result, completion: monitor(context))
         } catch {
             _ = try? await finishFailure(
-                preparation,
-                controller: controller,
+                context.preparation,
+                controller: context.controller,
                 code: "program-launch-failed"
             )
             throw error
@@ -145,7 +166,14 @@ public enum SafeProgramLauncher {
             _ = try await controller.markLaunchRequested(preparation)
             _ = try await Wine.runBatchFile(url: url, bottle: bottle)
             _ = try await controller.markMonitoring(preparation)
-            return try await controller.finish(preparation)
+            let refreshed = try? ProgramLaunchPlanner.resolve(
+                programURL: url,
+                bottleURL: bottle.url,
+                entries: entries
+            )
+            return try await controller.finish(
+                preparation.withSaveSources(refreshed?.saveSources ?? preparation.saveSources)
+            )
         } catch {
             _ = try? await finishFailure(
                 preparation,
@@ -157,15 +185,10 @@ public enum SafeProgramLauncher {
     }
 
     @MainActor
-    private static func monitor(
-        processNames: Set<String>,
-        bottle: Bottle,
-        preparation: LaunchSafetyPreparation,
-        controller: LaunchSafetyController,
-        timing: Timing
-    ) -> Task<LaunchTransactionRecord, Error> {
-        let driver = WineSteamClientDriver(bottle: bottle)
-        let watch = SteamProcessWatch(pollInterval: timing.pollInterval) {
+    private static func monitor(_ context: LaunchContext) -> Task<LaunchTransactionRecord, Error> {
+        let processNames = context.plan.processNames
+        let driver = WineSteamClientDriver(bottle: context.bottle)
+        let watch = SteamProcessWatch(pollInterval: context.timing.pollInterval) {
             let hostNames = await driver.hostWineImageNames()
             guard !hostNames.isDisjoint(with: processNames) else { return [] }
             return await Set(driver.processList().map { $0.imageName.lowercased() })
@@ -173,23 +196,32 @@ public enum SafeProgramLauncher {
         return Task { @MainActor in
             let appeared = await watch.waitForAny(
                 of: processNames,
-                timeout: timing.startTimeout
+                timeout: context.timing.startTimeout
             )
             if appeared {
-                _ = try await controller.markMonitoring(preparation)
+                _ = try await context.controller.markMonitoring(context.preparation)
                 let exited = await watch.waitUntilNone(
                     of: processNames,
-                    consecutiveChecks: timing.absentChecks
+                    consecutiveChecks: context.timing.absentChecks
                 )
                 if !exited {
                     return try await finishFailure(
-                        preparation,
-                        controller: controller,
+                        context.preparation,
+                        controller: context.controller,
                         code: "program-monitor-cancelled"
                     )
                 }
             }
-            return try await controller.finish(preparation)
+            let refreshed = try? ProgramLaunchPlanner.resolve(
+                programURL: context.url,
+                bottleURL: context.bottle.url,
+                entries: context.entries
+            )
+            return try await context.controller.finish(
+                context.preparation.withSaveSources(
+                    refreshed?.saveSources ?? context.preparation.saveSources
+                )
+            )
         }
     }
 

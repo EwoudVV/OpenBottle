@@ -25,30 +25,45 @@ public struct LaunchSafetyPreparation: Equatable, Sendable {
     public let bottleID: String
     public let gameID: String
     public let saveSnapshot: SaveSnapshot?
+    public let saveSources: [SaveSource]
 
     public init(
         transactionID: UUID,
         bottleURL: URL,
         bottleID: String,
         gameID: String,
-        saveSnapshot: SaveSnapshot?
+        saveSnapshot: SaveSnapshot?,
+        saveSources: [SaveSource]
     ) {
         self.transactionID = transactionID
         self.bottleURL = bottleURL
         self.bottleID = bottleID
         self.gameID = gameID
         self.saveSnapshot = saveSnapshot
+        self.saveSources = saveSources
+    }
+
+    public func withSaveSources(_ sources: [SaveSource]) -> LaunchSafetyPreparation {
+        LaunchSafetyPreparation(
+            transactionID: transactionID,
+            bottleURL: bottleURL,
+            bottleID: bottleID,
+            gameID: gameID,
+            saveSnapshot: saveSnapshot,
+            saveSources: sources
+        )
     }
 }
 
 /// One launch transaction used by stores, programs, shortcuts, URLs, and the CLI.
 public struct LaunchSafetyController: Sendable {
-    private let saveVault: SaveVault
+    let saveVault: SaveVault
     private let journal: LaunchTransactionJournal
-    private let configurationStore: LaunchConfigurationStore
-    private let leaseStore: LaunchLeaseStore
-    private let maximumSaveSnapshots: Int
-    private let maximumConfigurationSnapshots: Int
+    let configurationStore: LaunchConfigurationStore
+    let leaseStore: LaunchLeaseStore
+    let saveSourcePlanStore: SaveSourcePlanStore
+    let maximumSaveSnapshots: Int
+    let maximumConfigurationSnapshots: Int
 
     public init(
         saveVault: SaveVault,
@@ -56,6 +71,7 @@ public struct LaunchSafetyController: Sendable {
         configurationVault: SaveVault? = nil,
         configurationRestoreJournal: SaveRestoreJournal? = nil,
         leaseStore: LaunchLeaseStore? = nil,
+        saveSourcePlanStore: SaveSourcePlanStore? = nil,
         maximumSaveSnapshots: Int = SaveVault.defaultMaximumSnapshots,
         maximumConfigurationSnapshots: Int = LaunchConfigurationStore.defaultMaximumSnapshots
     ) {
@@ -74,6 +90,9 @@ public struct LaunchSafetyController: Sendable {
         )
         self.leaseStore = leaseStore ?? LaunchLeaseStore(
             rootURL: safetyRoot.appending(path: "Leases")
+        )
+        self.saveSourcePlanStore = saveSourcePlanStore ?? SaveSourcePlanStore(
+            rootURL: safetyRoot.appending(path: "Save Plans")
         )
         self.maximumSaveSnapshots = max(1, maximumSaveSnapshots)
         self.maximumConfigurationSnapshots = max(1, maximumConfigurationSnapshots)
@@ -119,6 +138,9 @@ public struct LaunchSafetyController: Sendable {
                 transactionID: identifier,
                 at: date
             )
+            try recordSavePlan(
+                saveSources, bottleURL: bottleURL, bottleID: bottleID, gameID: gameID, at: date
+            )
             _ = try await journal.advance(identifier, to: .preflightPassed, at: date)
             let snapshot = try await captureSaves(
                 bottleID: bottleID,
@@ -140,7 +162,8 @@ public struct LaunchSafetyController: Sendable {
                 bottleURL: bottleURL,
                 bottleID: bottleID,
                 gameID: gameID,
-                saveSnapshot: snapshot
+                saveSnapshot: snapshot,
+                saveSources: saveSources
             )
         } catch {
             try? await leaseStore.release(bottleID: bottleID, transactionID: identifier)
@@ -311,7 +334,21 @@ private extension LaunchSafetyController {
         _ record: LaunchTransactionRecord,
         preparation: LaunchSafetyPreparation
     ) async throws -> LaunchTransactionRecord {
-        _ = try await journal.advance(record.id, to: .cleaningUp)
+        let postLaunchSnapshot: SaveSnapshot?
+        do {
+            postLaunchSnapshot = try await capturePostLaunchSaves(preparation)
+        } catch {
+            return try await finishFailure(
+                record,
+                preparation: preparation,
+                code: "post-launch-save-capture-failed"
+            )
+        }
+        _ = try await journal.advance(
+            record.id,
+            to: .cleaningUp,
+            postLaunchSaveSnapshotID: postLaunchSnapshot?.manifest.id
+        )
         do {
             try await restoreConfiguration(preparation)
             try await releaseLease(preparation)
@@ -344,55 +381,5 @@ private extension LaunchSafetyController {
             _ = try? await journal.fail(record.id, code: "configuration-restore-failed")
             throw error
         }
-    }
-
-    private func restoreConfiguration(_ preparation: LaunchSafetyPreparation) async throws {
-        try await configurationStore.restore(
-            bottleURL: preparation.bottleURL,
-            bottleID: preparation.bottleID,
-            gameID: preparation.gameID,
-            snapshotID: preparation.transactionID.uuidString.lowercased(),
-            operationID: preparation.transactionID
-        )
-    }
-
-    private func releaseLease(_ preparation: LaunchSafetyPreparation) async throws {
-        try await leaseStore.release(
-            bottleID: preparation.bottleID,
-            transactionID: preparation.transactionID
-        )
-    }
-
-    private func enforceRetention(
-        _ record: LaunchTransactionRecord,
-        preparation: LaunchSafetyPreparation
-    ) throws {
-        if let saveSnapshotID = record.saveSnapshotID {
-            try saveVault.enforceRetention(
-                bottleID: record.bottleID,
-                gameID: record.gameID,
-                maximumSnapshots: maximumSaveSnapshots,
-                protectedSnapshotIDs: [saveSnapshotID]
-            )
-        }
-        try configurationStore.enforceRetention(
-            bottleID: preparation.bottleID,
-            gameID: preparation.gameID,
-            protectedSnapshotID: preparation.transactionID.uuidString.lowercased(),
-            maximumSnapshots: maximumConfigurationSnapshots
-        )
-    }
-
-    private func preparation(
-        for record: LaunchTransactionRecord,
-        bottleURL: URL
-    ) -> LaunchSafetyPreparation {
-        LaunchSafetyPreparation(
-            transactionID: record.id,
-            bottleURL: bottleURL,
-            bottleID: record.bottleID,
-            gameID: record.gameID,
-            saveSnapshot: nil
-        )
     }
 }

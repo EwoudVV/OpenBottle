@@ -99,7 +99,7 @@ extension SteamClientOrchestrator {
         defer { exitMonitorTasks[preparation.transactionID] = nil }
         let names = SteamLibrary.executableNames(under: game.installURL)
         guard !names.isEmpty else {
-            await complete(preparation)
+            await complete(preparation, game: game)
             return
         }
 
@@ -108,16 +108,23 @@ extension SteamClientOrchestrator {
             let running = await runningImageNames()
             absentChecks = running.isDisjoint(with: names) ? absentChecks + 1 : 0
             if absentChecks >= 2 {
-                await complete(preparation)
+                await complete(preparation, game: game)
                 return
             }
             try? await Task.sleep(for: timing.trackingInterval)
         }
     }
 
-    private func complete(_ preparation: SteamLaunchPreparation) async {
+    private func complete(
+        _ preparation: SteamLaunchPreparation,
+        game: SteamGame
+    ) async {
         do {
-            _ = try await launchSafety?.finishAfterExit(preparation)
+            _ = try await launchSafety?.finishAfterExit(
+                preparation,
+                game: game,
+                bottleURL: bottle.url
+            )
         } catch {
             await recordFailure(preparation, code: "launch-cleanup-failed")
             launchError = error.localizedDescription

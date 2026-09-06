@@ -31,18 +31,26 @@ enum SteamGameSavePlanner {
         wineUserName: String?
     ) throws -> SteamGameSavePlan {
         let entry = entries.first { $0.steamAppId == game.appId }
-        let locations = entry?.saveLocations ?? []
-        let sources = try GameSaveResolver.resolve(
-            locations,
+        let declared = try GameSaveResolver.resolve(
+            entry?.saveLocations ?? [],
             context: GameSaveContext(
                 bottleURL: bottleURL,
                 gameInstallURL: game.installURL,
                 wineUserName: wineUserName
             )
         )
+        let discovered = GameSaveDiscovery.steamSources(
+            game: game,
+            bottleURL: bottleURL,
+            entry: entry,
+            wineUserName: wineUserName
+        )
         return SteamGameSavePlan(
             gameID: entry?.id ?? "steam-\(game.appId)",
-            sources: sources
+            sources: GameSaveDiscovery.merging(
+                declared: declared,
+                discovered: discovered
+            )
         )
     }
 
