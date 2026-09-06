@@ -254,7 +254,18 @@ extension LibraryModel {
             return existing
         }
 
-        let made = SteamClientOrchestrator(bottle: bottle, driver: AppSteamClientDriver(bottle: bottle))
+        let safetyRoot = WhiskyWineInstaller.applicationFolder.appending(path: "Launch Safety")
+        let launchSafety = SteamLaunchSafetyController(
+            vault: SaveVault(rootURL: safetyRoot.appending(path: "Save Vault")),
+            journal: LaunchTransactionJournal(
+                rootURL: safetyRoot.appending(path: "Transactions")
+            )
+        )
+        let made = SteamClientOrchestrator(
+            bottle: bottle,
+            driver: AppSteamClientDriver(bottle: bottle),
+            launchSafety: launchSafety
+        )
         let url = bottle.url
         made.$phases
             .sink { [weak self] phases in

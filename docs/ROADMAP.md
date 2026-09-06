@@ -22,6 +22,10 @@ or map loading is deferred unless a change to the shared runtime regresses it.
 
 ## weeks 1–3: one safe Play button
 
+- [x] define portable save manifests with staged copies and SHA-256 verification
+- [x] persist launch stages so interrupted cleanup remains recoverable
+- [x] capture declared GameDB save paths in a per-bottle vault before Steam Play
+- [x] journal Steam library launch requests and finish them after the game exits
 - [ ] create one `LaunchTransaction` used by the library, CLI, shortcuts, Steam,
       and dragged files
 - [ ] snapshot renderer DLLs, settings, and the known save set before launch

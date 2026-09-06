@@ -3775,6 +3775,98 @@
         "minMacOSVersion": "15.0.0",
         "minWineVersion": "11.0"
       },
+      "saveLocations": [
+        {
+          "id": "audio-settings",
+          "root": "gameInstall",
+          "path": "audioSettings.dat",
+          "kind": "file"
+        },
+        {
+          "id": "building-platform",
+          "root": "gameInstall",
+          "path": "building_platform.dat",
+          "kind": "file"
+        },
+        {
+          "id": "car-categories",
+          "root": "gameInstall",
+          "path": "carcategoriessaver.dat",
+          "kind": "file"
+        },
+        {
+          "id": "character",
+          "root": "gameInstall",
+          "path": "char.dat",
+          "kind": "file"
+        },
+        {
+          "id": "input-mappings",
+          "root": "gameInstall",
+          "path": "input_mappings.dat",
+          "kind": "file"
+        },
+        {
+          "id": "inventory",
+          "root": "gameInstall",
+          "path": "inventoryTT.inv",
+          "kind": "file"
+        },
+        {
+          "id": "last-car",
+          "root": "gameInstall",
+          "path": "lastUsedCarsData.dat",
+          "kind": "file"
+        },
+        {
+          "id": "progress",
+          "root": "gameInstall",
+          "path": "saveables.dat",
+          "kind": "file"
+        },
+        {
+          "id": "settings",
+          "root": "gameInstall",
+          "path": "settings.set",
+          "kind": "file"
+        },
+        {
+          "id": "workshop-showcase",
+          "root": "gameInstall",
+          "path": "workshopShowcaseMaster.dat",
+          "kind": "file"
+        },
+        {
+          "id": "cars",
+          "root": "gameInstall",
+          "path": "cars",
+          "kind": "directory"
+        },
+        {
+          "id": "ghosts",
+          "root": "gameInstall",
+          "path": "ghosts",
+          "kind": "directory"
+        },
+        {
+          "id": "graphs",
+          "root": "gameInstall",
+          "path": "graphs",
+          "kind": "directory"
+        },
+        {
+          "id": "custom-maps",
+          "root": "gameInstall",
+          "path": "custommaps",
+          "kind": "directory"
+        },
+        {
+          "id": "workshop-showcase-data",
+          "root": "gameInstall",
+          "path": "workshopshowcase",
+          "kind": "directory"
+        }
+      ],
       "variants": [
         {
           "id": "dxvk-balanced-60",

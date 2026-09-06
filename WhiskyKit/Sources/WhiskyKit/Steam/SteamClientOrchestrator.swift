@@ -95,12 +95,14 @@ public final class SteamClientOrchestrator: ObservableObject {
     let bottle: Bottle
     let driver: SteamClientDriver
     let timing: Timing
+    let launchSafety: SteamLaunchSafetyController?
 
     private var trackingTask: Task<Void, Never>?
     private var executableNamesByAppId: [Int: Set<String>] = [:]
     /// The in-flight client startup, shared by every concurrent launch.
     private var clientStartup: Task<Void, Error>?
     private var launchTasks: [Int: Task<Void, Never>] = [:]
+    var exitMonitorTasks: [Int: Task<Void, Never>] = [:]
     var processSnapshot: (processes: [WineProcess], taken: Date)?
     var snapshotRead: Task<[WineProcess], Never>?
 
@@ -112,10 +114,16 @@ public final class SteamClientOrchestrator: ObservableObject {
     ///   - bottle: The bottle whose Steam client this drives.
     ///   - driver: The side-effect boundary; defaults to Wine.
     ///   - timing: Waits and intervals; defaults are the production values.
-    public init(bottle: Bottle, driver: SteamClientDriver? = nil, timing: Timing = Timing()) {
+    public init(
+        bottle: Bottle,
+        driver: SteamClientDriver? = nil,
+        timing: Timing = Timing(),
+        launchSafety: SteamLaunchSafetyController? = nil
+    ) {
         self.bottle = bottle
         self.driver = driver ?? WineSteamClientDriver(bottle: bottle)
         self.timing = timing
+        self.launchSafety = launchSafety
     }
 
     /// Launches a game via `-applaunch`, bringing the client up first if needed.
@@ -167,6 +175,10 @@ public final class SteamClientOrchestrator: ObservableObject {
             task.cancel()
         }
         launchTasks.removeAll()
+        for task in exitMonitorTasks.values {
+            task.cancel()
+        }
+        exitMonitorTasks.removeAll()
         clientStartup?.cancel()
         clientStartup = nil
         driver.shutdown()
@@ -196,25 +208,74 @@ public final class SteamClientOrchestrator: ObservableObject {
             return
         }
         let steamExe = steamRoot.appending(path: "steam.exe")
+        let preparation: SteamLaunchPreparation?
 
+        do {
+            preparation = try await launchSafety?.prepare(game: game, bottleURL: bottle.url)
+        } catch {
+            if !Task.isCancelled {
+                launchError = error.localizedDescription
+            }
+            return
+        }
+        if await recordCancellationIfNeeded(preparation) { return }
+
+        guard await ensureSteamClient(steamExe, preparation: preparation) else { return }
+        guard await requestLaunch(game, preparation: preparation) else { return }
+        guard await observeGameStart(game, preparation: preparation) else { return }
+        await beginExitMonitoring(game, preparation: preparation)
+    }
+
+    private func ensureSteamClient(
+        _ steamExe: URL,
+        preparation: SteamLaunchPreparation?
+    ) async -> Bool {
         do {
             try await ensureClientRunning(steamExe: steamExe)
         } catch {
-            launchError = error.localizedDescription
-            return
+            let failureCode = Task.isCancelled ? "launch-cancelled" : "steam-client-start-failed"
+            await recordFailure(preparation, code: failureCode)
+            if !Task.isCancelled {
+                launchError = error.localizedDescription
+            }
+            return false
         }
+        return await !recordCancellationIfNeeded(preparation)
+    }
 
+    private func requestLaunch(
+        _ game: SteamGame,
+        preparation: SteamLaunchPreparation?
+    ) async -> Bool {
         phases[game.appId] = .launching
         do {
+            if let preparation {
+                _ = try await launchSafety?.markPrepared(preparation)
+                _ = try await launchSafety?.markLaunchRequested(preparation)
+            }
+            if await recordCancellationIfNeeded(preparation) { return false }
             try driver.launchGame(game)
+            return true
         } catch {
+            await recordFailure(preparation, code: "game-launch-request-failed")
             launchError = error.localizedDescription
-            return
+            return false
         }
+    }
 
-        if await !waitForGameProcess(installURL: game.installURL) {
-            launchError = String(localized: "steam.launch.timeout")
+    private func observeGameStart(
+        _ game: SteamGame,
+        preparation: SteamLaunchPreparation?
+    ) async -> Bool {
+        guard await waitForGameProcess(installURL: game.installURL) else {
+            let failureCode = Task.isCancelled ? "launch-cancelled" : "game-process-timeout"
+            await recordFailure(preparation, code: failureCode)
+            if !Task.isCancelled {
+                launchError = String(localized: "steam.launch.timeout")
+            }
+            return false
         }
+        return await !recordCancellationIfNeeded(preparation)
     }
 
     private func ensureClientRunning(steamExe: URL) async throws {

@@ -368,6 +368,8 @@ public struct GameDBEntry: Codable, Sendable, Equatable {
     public let antiCheat: String?
     /// Hardware and software constraints.
     public let constraints: GameConstraints?
+    /// Portable save files and directories captured before launch.
+    public let saveLocations: [GameSaveLocation]?
     /// Configuration variants (at least one required).
     public let variants: [GameConfigVariant]
     /// General notes displayed in the detail view.
@@ -399,6 +401,7 @@ public struct GameDBEntry: Codable, Sendable, Equatable {
         pathPatterns: [String]? = nil,
         antiCheat: String? = nil,
         constraints: GameConstraints? = nil,
+        saveLocations: [GameSaveLocation]? = nil,
         variants: [GameConfigVariant],
         notes: [String]? = nil,
         knownIssues: [KnownIssue]? = nil,
@@ -416,6 +419,7 @@ public struct GameDBEntry: Codable, Sendable, Equatable {
         self.pathPatterns = pathPatterns
         self.antiCheat = antiCheat
         self.constraints = constraints
+        self.saveLocations = saveLocations
         self.variants = variants
         self.notes = notes
         self.knownIssues = knownIssues
@@ -439,6 +443,7 @@ public struct GameDBEntry: Codable, Sendable, Equatable {
         self.pathPatterns = try container.decodeIfPresent([String].self, forKey: .pathPatterns)
         self.antiCheat = try container.decodeIfPresent(String.self, forKey: .antiCheat)
         self.constraints = try container.decodeIfPresent(GameConstraints.self, forKey: .constraints)
+        self.saveLocations = try container.decodeIfPresent([GameSaveLocation].self, forKey: .saveLocations)
         self.variants = try container.decodeIfPresent([GameConfigVariant].self, forKey: .variants) ?? []
         self.notes = try container.decodeIfPresent([String].self, forKey: .notes)
         self.knownIssues = try container.decodeIfPresent([KnownIssue].self, forKey: .knownIssues)

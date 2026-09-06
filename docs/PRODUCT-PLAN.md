@@ -95,6 +95,8 @@ transaction should:
 - DXMT, DXVK, wined3d, and optional D3DMetal selection;
 - launcher detection for Steam, Epic, EA, Ubisoft, Rockstar, and Battle.net;
 - dependency installation, run logs, crash classification, and diagnostics;
+- an atomic per-bottle save-snapshot core and durable launch-recovery journal,
+  wired into Steam library launches;
 - CI for the package, every Xcode scheme, resources, and UI tests.
 
 ## what is missing
@@ -112,12 +114,12 @@ Stable, Preview, and per-game pinned slots. every slot needs a manifest with
 versions, hashes, licenses, capabilities, and its source. an update must never
 remove the last runtime that launched a game successfully.
 
-### a general save vault
+### finish the general save vault
 
-the Screw Drivers recovery proved this is required. the launch transaction needs
-per-game save discovery, an automatic local restore point, visible Steam Cloud
-policy, retention controls, and hash verification. cloud access should be an
-explicit game setting rather than an invisible side effect of Play.
+Steam library launches now capture the save paths declared in GameDB before Play
+reaches Steam. the vault still needs broad save discovery, restore UI, visible
+Steam Cloud policy, and retention controls. cloud access should be an explicit
+game setting rather than an invisible side effect of Play.
 
 ### hardware-aware profiles
 
