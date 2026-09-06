@@ -52,7 +52,7 @@ bottle or renderer work, and a failed launch can be rolled back from the game pa
       copy launches successfully
 - [x] make the library the end of setup instead of asking a new user to understand
       bottles
-- [ ] produce the first local OpenBottle build and migration smoke test
+- [x] produce the first local OpenBottle build, fresh-install smoke, and copy-import tests
 
 exit: OpenBottle launches under its own identity, sees the existing games without
 changing them, and can be removed without affecting Whisky.
@@ -83,7 +83,7 @@ configuration for an installed game.
 - [x] add a scrubbed, opt-in compatibility report export
 - [ ] accept versioned community profiles with reviewable provenance
 - [ ] detect stale profiles after game, runtime, renderer, or macOS updates
-- [ ] publish an alpha, then promote it only after migration and rollback tests pass
+- [x] publish an alpha, then promote it only after migration and rollback tests pass
 
 exit: the app handles different APIs, engines, stores, input methods, media paths,
 and failure classes without adding game-specific launcher scripts.
