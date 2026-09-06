@@ -39,6 +39,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   initializer from WhiskyKit's public API, along with the `isClickOnce`
   property, so the kit needs a major version bump (#215).
 
+## [0.1.0-alpha.3] - 2026-09-06 (App)
+
+### Fixed
+- Bottle imports now hash large game files through one fixed 1 MiB POSIX buffer
+  with one-use filesystem caching disabled. importing a 55 GB Steam bottle no
+  longer drives the machine into extreme memory pressure.
+- Legacy bottle discovery now canonicalizes trailing slashes and symlinks, so
+  the same old Whisky bottle cannot appear twice in the import sheet.
+
 ## [0.1.0-alpha.2] - 2026-09-06 (App)
 
 ### Changed
@@ -919,7 +928,8 @@ When adding entries to this changelog, use the following categories:
 - **Security** - Vulnerability fixes
 - **Documentation** - Documentation-only changes
 
-[Unreleased]: https://github.com/EwoudVV/OpenBottle/compare/app-v0.1.0-alpha.2...HEAD
+[Unreleased]: https://github.com/EwoudVV/OpenBottle/compare/app-v0.1.0-alpha.3...HEAD
+[0.1.0-alpha.3]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.3
 [0.1.0-alpha.2]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.1
 [3.0.0]: https://github.com/frankea/Whisky/releases/tag/v3.0.0

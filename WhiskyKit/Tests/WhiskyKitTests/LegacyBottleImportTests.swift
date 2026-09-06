@@ -102,6 +102,29 @@ final class LegacyBottleImportTests: XCTestCase {
         XCTAssertEqual(found, [shared])
     }
 
+    func testDeduplicatesTrailingSlashForms() throws {
+        let bottles = try bottlesDir()
+        let shared = try makeBottle("a", in: bottles)
+        let withTrailingSlash = URL(
+            fileURLWithPath: shared.path(percentEncoded: false) + "/",
+            isDirectory: true
+        )
+        try writeRegistry([withTrailingSlash])
+
+        let found = LegacyBottleImport.importableBottleURLs(
+            legacyContainer: container,
+            existingPaths: []
+        )
+
+        XCTAssertEqual(found.count, 1)
+        XCTAssertEqual(
+            found.first?.resolvingSymlinksInPath().path(percentEncoded: false)
+                .trimmingCharacters(in: CharacterSet(charactersIn: "/")),
+            shared.resolvingSymlinksInPath().path(percentEncoded: false)
+                .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        )
+    }
+
     func testImportableBottlesCarryNamesWithDirectoryFallback() throws {
         let bottles = try bottlesDir()
         // The dummy Metadata.plist isn't a decodable BottleSettings, so the name should

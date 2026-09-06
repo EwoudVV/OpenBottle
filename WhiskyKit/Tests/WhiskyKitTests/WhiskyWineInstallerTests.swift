@@ -431,6 +431,10 @@ final class WhiskyWineInstallerSHA256Tests: XCTestCase {
         XCTAssertEqual(WhiskyWineInstaller.sha256(ofFileAt: url), expected)
     }
 
+    func testStreamingHasherUsesOneMiBBuffer() {
+        XCTAssertEqual(StreamingFileHash.chunkSize, 1_048_576)
+    }
+
     func testSHA256OfMissingFileReturnsNil() {
         let missing = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)

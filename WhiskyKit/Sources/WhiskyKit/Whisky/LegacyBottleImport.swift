@@ -89,7 +89,7 @@ public enum LegacyBottleImport {
         legacyContainer: URL = legacyContainerDirectory,
         existingPaths: [URL]
     ) -> [URL] {
-        let existing = Set(existingPaths.map(\.standardizedFileURL))
+        let existing = Set(existingPaths.map(comparablePath))
         var candidates: [URL] = []
 
         // 1. The registry plist lists every bottle the original app knew about, including
@@ -109,11 +109,12 @@ public enum LegacyBottleImport {
             candidates.append(contentsOf: entries)
         }
 
-        var seen = Set<URL>()
+        var seen = Set<String>()
         var result: [URL] = []
         for candidate in candidates {
             let standardized = candidate.standardizedFileURL
-            guard !existing.contains(standardized), seen.insert(standardized).inserted else { continue }
+            let key = comparablePath(standardized)
+            guard !existing.contains(key), seen.insert(key).inserted else { continue }
             guard isBottle(at: standardized) else { continue }
             result.append(standardized)
         }
@@ -167,14 +168,14 @@ public enum LegacyBottleImport {
         sources: [Source],
         existingPaths: [URL]
     ) -> [DiscoveredBottle] {
-        var seen = Set<URL>()
+        var seen = Set<String>()
         var bottles: [DiscoveredBottle] = []
         for source in sources where legacyContainerExists(at: source.containerDirectory) {
             let found = importableBottleURLs(
                 legacyContainer: source.containerDirectory,
                 existingPaths: existingPaths
             )
-            for url in found where seen.insert(url.standardizedFileURL).inserted {
+            for url in found where seen.insert(comparablePath(url)).inserted {
                 bottles.append(DiscoveredBottle(
                     url: url,
                     name: readOnlyName(at: url) ?? url.lastPathComponent,
@@ -211,5 +212,13 @@ public enum LegacyBottleImport {
     private static func isBottle(at url: URL) -> Bool {
         let metadata = url.appending(path: "Metadata").appendingPathExtension("plist")
         return FileManager.default.fileExists(atPath: metadata.path(percentEncoded: false))
+    }
+
+    private static func comparablePath(_ url: URL) -> String {
+        var path = url.standardizedFileURL.resolvingSymlinksInPath().path(percentEncoded: false)
+        while path.count > 1, path.hasSuffix("/") {
+            path.removeLast()
+        }
+        return path
     }
 }

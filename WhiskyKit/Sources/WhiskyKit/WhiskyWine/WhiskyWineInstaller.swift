@@ -17,7 +17,6 @@
 //
 
 // swiftlint:disable file_length
-import CryptoKit
 import Foundation
 import os
 import SemanticVersion
@@ -219,29 +218,12 @@ public class WhiskyWineInstaller {
     /// - Returns: The lowercase hex SHA-256 digest, or `nil` if the file cannot
     ///   be opened or read.
     public static func sha256(ofFileAt url: URL) -> String? {
-        guard let handle = try? FileHandle(forReadingFrom: url) else {
-            logger.error("Cannot open \(url.path) to compute SHA-256")
-            return nil
-        }
-        defer { try? handle.close() }
-
-        var hasher = SHA256()
-        let chunkSize = 1 << 20 // 1 MiB
         do {
-            while true {
-                // `read(upToCount:)` returns nil at EOF and may return an empty
-                // (non-nil) Data on some streams; treat both as "no more bytes".
-                guard let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty else {
-                    break
-                }
-                hasher.update(data: chunk)
-            }
+            return try StreamingFileHash.sha256(of: url)
         } catch {
             logger.error("Failed reading \(url.path) for SHA-256: \(error.localizedDescription)")
             return nil
         }
-
-        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
     /// The outcome of checking a downloaded archive against an expected digest.

@@ -224,7 +224,7 @@ public enum BottleImporter {
             return try .file(FileRecord(
                 path: path,
                 byteCount: (attributes[.size] as? NSNumber)?.int64Value ?? 0,
-                sha256: SaveVault.sha256(of: item)
+                sha256: StreamingFileHash.sha256(of: item)
             ))
         }
         throw BottleImportError.unsupportedItem(path)
