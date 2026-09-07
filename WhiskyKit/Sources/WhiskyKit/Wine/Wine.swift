@@ -252,7 +252,8 @@ public class Wine {
         at url: URL, args: [String] = [], bottle: Bottle, environment: [String: String] = [:],
         programOverrides: ProgramOverrides? = nil, programSettings: ProgramSettings? = nil,
         gameProfileEnvironment: [String: String] = [:],
-        overridesApplyToDescendants: Bool = false
+        overridesApplyToDescendants: Bool = false,
+        onProcessStarted: (@Sendable () -> Void)? = nil
     ) async throws -> ProgramRunResult {
         // Note: Launcher detection and fix application happen before this method
         // is called, via LauncherFixes.detectAndApply from the app's run paths
@@ -370,12 +371,14 @@ public class Wine {
         DiscordIntegration.shared.programLaunching(url, bottle: bottle)
 
         var exitCode: Int32 = 0
-        for await output in try runProcess(
+        let processOutput = try runProcess(
             name: programName,
             args: launchArgs,
             environment: wineEnvironment, executableURL: wineBinary,
             fileHandle: fileHandle
-        ) {
+        )
+        onProcessStarted?()
+        for await output in processOutput {
             if case let .terminated(code) = output {
                 exitCode = code
             }

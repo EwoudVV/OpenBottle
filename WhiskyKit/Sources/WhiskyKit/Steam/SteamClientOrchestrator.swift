@@ -270,7 +270,7 @@ public final class SteamClientOrchestrator: ObservableObject {
                 _ = try await launchSafety?.markLaunchRequested(preparation)
             }
             if await recordCancellationIfNeeded(preparation) { return false }
-            try driver.launchGame(game, offline: offline)
+            try await driver.launchGame(game, offline: offline)
             return true
         } catch {
             await recordFailure(preparation, code: "game-launch-request-failed")

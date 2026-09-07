@@ -61,7 +61,7 @@ public enum SteamLauncher {
         installURL: URL? = nil,
         record: Bool = true,
         offline: Bool = false
-    ) throws -> Task<Void, Never> {
+    ) async throws -> Task<Void, Never> {
         guard let steamRoot = SteamLibrary.detectInstall(bottleURL: bottle.url) else {
             throw SteamLaunchError.steamNotInstalled
         }
@@ -80,16 +80,28 @@ public enum SteamLauncher {
         let steamExe = steamRoot.appending(path: "steam.exe")
 
         let arguments = (offline ? ["-offline"] : []) + ["-applaunch", String(appId)]
-        return Task {
-            await Wine.syncAudioRegistry(bottle: bottle)
-            _ = try? await Wine.runProgram(
-                at: steamExe, args: arguments, bottle: bottle,
-                programOverrides: plan.overrides,
-                gameProfileEnvironment: plan.gameProfileEnvironment,
-                // the plan is the game's; steam.exe is only the vehicle
-                overridesApplyToDescendants: true
-            )
+        let startup = AsyncThrowingStream<Void, Error>.makeStream()
+        let task = Task<Void, Never> {
+            do {
+                await Wine.syncAudioRegistry(bottle: bottle)
+                _ = try await Wine.runProgram(
+                    at: steamExe, args: arguments, bottle: bottle,
+                    programOverrides: plan.overrides,
+                    gameProfileEnvironment: plan.gameProfileEnvironment,
+                    // the plan is the game's; steam.exe is only the vehicle
+                    overridesApplyToDescendants: true,
+                    onProcessStarted: {
+                        startup.continuation.yield()
+                        startup.continuation.finish()
+                    }
+                )
+            } catch {
+                startup.continuation.finish(throwing: error)
+            }
         }
+        var iterator = startup.stream.makeAsyncIterator()
+        _ = try await iterator.next()
+        return task
     }
 
     /// The user's persisted overrides for a game's executables, so settings

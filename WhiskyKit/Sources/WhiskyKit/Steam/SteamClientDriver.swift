@@ -44,7 +44,7 @@ public protocol SteamClientDriver: AnyObject {
     func applyLauncherFixes()
 
     /// Hands `-applaunch` for the game to the running client.
-    func launchGame(_ game: SteamGame, offline: Bool) throws
+    func launchGame(_ game: SteamGame, offline: Bool) async throws
 
     /// Asks one of the bottle's processes to close.
     func killProcess(winePID: Int32) async
@@ -132,8 +132,8 @@ open class WineSteamClientDriver: SteamClientDriver {
     /// overrides, records the bottle for this App ID, and hands `-applaunch`
     /// to the client. The returned task can outlive the game, so it is never
     /// awaited. The install URL is already known, which saves a library rescan.
-    open func launchGame(_ game: SteamGame, offline: Bool) throws {
-        _ = try SteamLauncher.launch(
+    open func launchGame(_ game: SteamGame, offline: Bool) async throws {
+        _ = try await SteamLauncher.launch(
             appId: game.appId,
             bottle: bottle,
             installURL: game.installURL,

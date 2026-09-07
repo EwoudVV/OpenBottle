@@ -62,6 +62,24 @@ struct SteamClientOrchestratorLaunchTests {
         #expect(driver.readyCalls == 1)
     }
 
+    @Test("Cold start: launch setup does not spend the client wait")
+    func coldStartWaitBeginsAfterLaunchSetup() async throws {
+        let (bottle, games) = try Fixture.makeBottle()
+        let driver = FakeSteamClientDriver(script: [[]])
+        driver.launchDelay = .milliseconds(350)
+        driver.onLaunchGame = { _ in
+            driver.script = [["steam.exe", "game1.exe"]]
+        }
+        let orchestrator = SteamClientOrchestrator(bottle: bottle, driver: driver, timing: Fixture.fast)
+
+        orchestrator.launch(games[0])
+        await Fixture.awaitIdle(orchestrator)
+
+        #expect(orchestrator.launchError == nil)
+        #expect(driver.launched == [games[0].appId])
+        #expect(driver.readyCalls == 1)
+    }
+
     @Test("Concurrent cold launches each carry their profiled request")
     func singleFlightStartup() async throws {
         let (bottle, games) = try Fixture.makeBottle(games: [1_086_940, 1_245_620])

@@ -30,6 +30,8 @@ final class FakeSteamClientDriver: SteamClientDriver {
     var hostOverride: Set<String>?
     /// Simulated `tasklist.exe` latency, for the coalescing test.
     var listDelay: Duration = .zero
+    /// Simulated work before the host process has actually been started.
+    var launchDelay: Duration = .zero
     var onStartClient: (() -> Void)?
     var onLaunchGame: ((SteamGame) -> Void)?
     var launchFailure: Error?
@@ -79,9 +81,12 @@ final class FakeSteamClientDriver: SteamClientDriver {
         fixesCalls += 1
     }
 
-    func launchGame(_ game: SteamGame, offline: Bool) throws {
+    func launchGame(_ game: SteamGame, offline: Bool) async throws {
         if let launchFailure {
             throw launchFailure
+        }
+        if launchDelay > .zero {
+            try? await Task.sleep(for: launchDelay)
         }
         launched.append(game.appId)
         launchedOffline.append(offline)

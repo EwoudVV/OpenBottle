@@ -39,6 +39,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   initializer from WhiskyKit's public API, along with the `isClickOnce`
   property, so the kit needs a major version bump (#215).
 
+## [0.1.0-alpha.8] - 2026-09-06 (App)
+
+### Fixed
+- The cold-Steam timeout now starts after Wine has launched the host process.
+  Profile preparation can no longer use the entire client wait and release a
+  late, unmonitored `-applaunch` after the transaction has failed.
+
 ## [0.1.0-alpha.7] - 2026-09-06 (App)
 
 ### Fixed
@@ -957,7 +964,8 @@ When adding entries to this changelog, use the following categories:
 - **Security** - Vulnerability fixes
 - **Documentation** - Documentation-only changes
 
-[Unreleased]: https://github.com/EwoudVV/OpenBottle/compare/app-v0.1.0-alpha.7...HEAD
+[Unreleased]: https://github.com/EwoudVV/OpenBottle/compare/app-v0.1.0-alpha.8...HEAD
+[0.1.0-alpha.8]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.8
 [0.1.0-alpha.7]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.7
 [0.1.0-alpha.6]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.6
 [0.1.0-alpha.5]: https://github.com/EwoudVV/OpenBottle/releases/tag/app-v0.1.0-alpha.5
